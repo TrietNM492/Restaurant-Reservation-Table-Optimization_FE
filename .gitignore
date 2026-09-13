@@ -1,0 +1,42 @@
+# --- Java & Build Tools ---
+bin/
+target/
+.gradle/
+build/
+*.class
+*.jar
+*.war
+/node_modules
+/build
+/dist
+
+# --- IDEs & Editors ---
+.vscode/
+.idea/
+*.iml
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# --- Environment & Databases (Dữ liệu của bạn) ---
+.env
+.env.development
+.env.local
+mysql_data/
+postgres_data/
+
+# --- Operating System Files ---
+Thumbs.db
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
