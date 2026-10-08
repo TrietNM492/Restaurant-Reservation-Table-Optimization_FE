@@ -5,5 +5,7 @@ export const ROUTES = {
 
     DASHBOARD: "/admin/dashboard",
 
+    PAGE_TEMP: "/page-temp",
+
     NOT_FOUND: "*",
 }

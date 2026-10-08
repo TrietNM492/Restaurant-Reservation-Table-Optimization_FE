@@ -1,0 +1,229 @@
+.admin-shell {
+  min-height: 100vh;
+  background: var(--color-canvas);
+}
+
+.admin-shell__main {
+  min-height: 100vh;
+  margin-left: 248px;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-shell__breadcrumb {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  padding: 0 34px;
+}
+
+.admin-shell__content {
+  width: min(100%, 1500px);
+  flex: 1;
+  padding: 20px 34px 36px;
+  margin: 0 auto;
+}
+
+.app-header {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 34px;
+  border-bottom: 1px solid var(--color-line);
+  background: rgb(255 255 255 / 94%);
+  backdrop-filter: blur(12px);
+}
+
+.app-header__left,
+.app-header__actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.app-header__left { gap: 11px; }
+.app-header__actions { gap: 12px; }
+.app-header__menu { display: none !important; }
+
+.app-header__venue-mark,
+.app-sidebar__brand-mark,
+.app-sidebar__account-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  border-radius: 11px;
+  background: #176e4f;
+  color: #fff;
+  font-family: Manrope, sans-serif;
+  font-weight: 800;
+}
+
+.app-header__venue-mark { width: 34px; height: 34px; font-size: 15px; }
+.app-header__venue.MuiTypography-root { color: #2d3c32; font-size: 12px; font-weight: 700; line-height: 1.35; }
+.app-header__caption.MuiTypography-root { margin-top: 3px; color: #8b978f; font-size: 10px; line-height: 1.2; }
+
+.app-header__search {
+  display: flex;
+  width: min(260px, 28vw);
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid #e9ede9;
+  border-radius: 10px;
+  color: #87938a;
+  background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.app-header__search:focus-within {
+  border-color: #8eb9a0;
+  box-shadow: 0 0 0 3px rgb(22 122 90 / 8%);
+}
+
+.app-header__search > .MuiSvgIcon-root { font-size: 18px; }
+.app-header__search .MuiInputBase-root { flex: 1; color: #38463d; font-size: 11px; }
+.app-header__search .MuiInputBase-input { padding: 5px 0; }
+.app-header__search .MuiInputBase-input::placeholder { color: #9aa49d; opacity: 1; }
+.app-header__search kbd { padding: 3px 5px; border: 1px solid #edf0ed; border-radius: 5px; color: #98a29b; font: 9px 'DM Sans', sans-serif; white-space: nowrap; }
+
+.app-header__notification.MuiIconButton-root {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e9ede9;
+  border-radius: 11px;
+  color: #647168;
+  background: #fff;
+}
+
+.app-header__notification.MuiIconButton-root:hover { background: #f7faf7; }
+.app-header__notification .MuiSvgIcon-root { font-size: 18px; }
+.app-header__notification-dot { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border: 1px solid #fff; border-radius: 50%; background: #de765c; }
+.app-header__avatar.MuiAvatar-root { border-color: transparent; }
+
+.app-sidebar {
+  width: 248px;
+  border-right: 1px solid var(--color-line);
+  background: #fff;
+}
+
+.app-sidebar--desktop {
+  position: fixed;
+  z-index: 6;
+  inset: 0 auto 0 0;
+  overflow-y: auto;
+}
+
+.app-sidebar__content {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  padding: 23px 15px 16px;
+}
+
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 9px 25px;
+  color: #25382e;
+  font-family: Manrope, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+.app-sidebar__brand-mark { width: 34px; height: 34px; font-size: 16px; }
+.app-sidebar__brand-copy small { display: block; margin-top: 3px; color: #8b978f; font-family: 'DM Sans', sans-serif; font-size: 9px; font-weight: 500; letter-spacing: .07em; }
+.app-sidebar__group + .app-sidebar__group { margin-top: 13px; }
+.app-sidebar__label.MuiTypography-root { padding: 12px 10px 8px; color: #9ba59e; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+
+.app-sidebar__link {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 11px;
+  border-radius: 10px;
+  color: #69766e;
+  font-size: 12px;
+  font-weight: 500;
+  transition: color .16s ease, background .16s ease;
+}
+
+.app-sidebar__link:hover { color: #2f4437; background: #f5f8f5; }
+.app-sidebar__link.is-active { color: #176d4e; background: #eaf4ee; font-weight: 700; }
+.app-sidebar__link:focus-visible { outline: 3px solid #9bd2bd; outline-offset: 2px; }
+.app-sidebar__link-icon.MuiSvgIcon-root { width: 19px; height: 19px; color: currentColor; }
+.app-sidebar__count { margin-left: auto; padding: 3px 7px; border-radius: 7px; color: #748179; background: #f0f3f0; font-size: 10px; }
+
+.app-sidebar__bottom { margin-top: auto; padding-top: 20px; }
+.app-sidebar__help { padding: 13px; border: 1px solid #eaf0eb; border-radius: 14px; background: #f8faf8; }
+.app-sidebar__help > .MuiSvgIcon-root { margin-bottom: 8px; color: #348260; font-size: 17px; }
+.app-sidebar__help > .MuiTypography-root.MuiTypography-root { display: block; }
+.app-sidebar__help strong.MuiTypography-root { color: #34443a; font-size: 11px; font-weight: 700; }
+.app-sidebar__help p.MuiTypography-root { margin: 5px 0 11px; color: #859189; font-size: 10px; line-height: 1.5; }
+.app-sidebar__help .MuiButton-root { min-height: 31px; border-color: #dfe7e1; border-radius: 9px; color: #4d5c52; font-size: 10px; text-transform: none; }
+
+.app-sidebar__account { display: flex; align-items: center; gap: 9px; padding: 15px 7px 0; margin-top: 14px; border-top: 1px solid #edf0ed; }
+.app-sidebar__account-mark { width: 34px; height: 34px; border-radius: 50%; background: #e4f0e8; color: #286047; font-size: 11px; }
+.app-sidebar__account > span:nth-child(2) { min-width: 0; }
+.app-sidebar__account strong,
+.app-sidebar__account small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-sidebar__account strong { color: #34433a; font-size: 10px; font-weight: 700; }
+.app-sidebar__account small { margin-top: 3px; color: #8b968e; font-size: 9px; }
+.app-sidebar__account-menu { margin-left: auto; color: #8b968e; font-size: 12px; letter-spacing: 1px; }
+.app-sidebar-drawer .MuiDrawer-paper { width: min(280px, 86vw); border-right: 1px solid var(--color-line); }
+
+.app-breadcrumb .MuiBreadcrumbs-separator { margin: 0 9px; color: #b0b9b3; font-size: 10px; }
+.app-breadcrumb .MuiLink-root { color: #929d95; font-size: 11px; }
+.app-breadcrumb .MuiTypography-root { color: #4d5c52; font-size: 11px; font-weight: 600; }
+
+.app-footer {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 34px;
+  border-top: 1px solid #e9ede9;
+  color: #929d95;
+  font-size: 10px;
+}
+
+.app-footer__links { display: flex; gap: 16px; }
+.app-footer__links .MuiLink-root { color: #748179; font-size: 10px; }
+
+@media (max-width: 900px) {
+  .admin-shell__main { margin-left: 0; }
+  .app-sidebar--desktop { display: none; }
+  .app-header__menu.MuiIconButton-root { display: inline-flex !important; width: 36px; height: 36px; border: 1px solid #e9ede9; border-radius: 10px; color: #59675f; }
+  .admin-shell__breadcrumb { padding-right: 24px; padding-left: 24px; }
+  .admin-shell__content { padding-right: 24px; padding-left: 24px; }
+  .app-header { padding-right: 24px; padding-left: 24px; }
+  .app-footer { padding-right: 24px; padding-left: 24px; }
+}
+
+@media (max-width: 560px) {
+  .app-header { min-height: 60px; gap: 12px; padding-right: 15px; padding-left: 12px; }
+  .app-header__left { gap: 8px; }
+  .app-header__venue-mark { width: 31px; height: 31px; }
+  .app-header__caption.MuiTypography-root { display: none; }
+  .app-header__search { width: 36px; min-height: 36px; justify-content: center; padding: 0; border-color: transparent; background: transparent; }
+  .app-header__search .MuiInputBase-root,
+  .app-header__search kbd { display: none; }
+  .app-header__search > .MuiSvgIcon-root { color: #647168; }
+  .app-header__actions { gap: 5px; }
+  .app-header__notification.MuiIconButton-root { width: 34px; height: 34px; }
+  .admin-shell__breadcrumb { min-height: 42px; padding-right: 16px; padding-left: 16px; }
+  .admin-shell__content { padding: 16px 16px 28px; }
+  .app-footer { align-items: flex-start; flex-wrap: wrap; padding: 13px 16px; }
+  .app-footer > span:nth-child(2) { order: 3; width: 100%; }
+  .app-footer__links { margin-left: auto; }
+}

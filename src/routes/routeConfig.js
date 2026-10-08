@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { createElement, lazy } from "react";
 
 import AuthLayout from "../layouts/AuthLayout";
 import AdminLayout from "../layouts/AdminLayout";
@@ -14,38 +14,47 @@ const DashboardPage = lazy(() =>
     import("../pages/AdminDashboardPage")
 );
 
+const PageTemp = lazy(() =>
+    import("../pages/PageTemp")
+);
+
 const NotFoundPage = lazy(() =>
     import("../pages/error/NotFound")
 );
 
 export const routeConfig = [
     {
-        element: <AuthLayout />,
+        element: createElement(AuthLayout),
         children: [
             {
                 path: ROUTES.LOGIN,
-                element: <LoginPage />,
+                element: createElement(LoginPage),
             },
         ],
     },
 
     {
-        element: (
-            <ProtectedRoute>
-                <AdminLayout />
-            </ProtectedRoute>
+        element: createElement(
+            ProtectedRoute,
+            null,
+            createElement(AdminLayout)
         ),
 
         children: [
             {
                 path: ROUTES.DASHBOARD,
-                element: <DashboardPage />
+                element: createElement(DashboardPage)
             }
         ]
     },
 
     {
+        path: ROUTES.PAGE_TEMP,
+        element: createElement(PageTemp),
+    },
+
+    {
         path: ROUTES.NOT_FOUND,
-        element: <NotFoundPage />,
+        element: createElement(NotFoundPage),
     },
 ];
