@@ -38,12 +38,13 @@ export default function Select({ label, id, options = [], className = '', ...pro
           borderRadius: '12px',
           bgcolor: '#fff',
           fontSize: 12,
-          '& fieldset': { borderColor: '#e1e7e2' },
-          '&:hover fieldset': { borderColor: '#c4d1c8' },
-          '&.Mui-focused fieldset': { borderColor: '#39896c', borderWidth: 1 },
+          '& fieldset': { borderColor: '#E2E8F0' },
+          '&:hover fieldset': { borderColor: '#C4B5FD' },
+          '&.Mui-focused fieldset': { borderColor: '#6D28D9', borderWidth: 1.5, boxShadow: '0 0 0 3px rgba(109, 40, 217, 0.12)' },
         },
         '& .MuiSelect-select': { py: '9px', pl: '12px', pr: '34px' },
-        '& .MuiInputLabel-root': { color: '#536159', fontSize: 12 },
+        '& .MuiInputLabel-root': { color: '#64748B', fontSize: 12 },
+        '& .MuiMenu-paper': { borderRadius: '12px' },
       }}
     >
       {options.map((option) => {

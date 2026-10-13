@@ -43,7 +43,7 @@ function Footer() {
                     }}
                 >
                     <Box>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+                        <Stack direction="row" spacing={1} sx={{ mb: 2, alignItems: 'center' }}>
                             <RestaurantIcon sx={{ color: 'primary.main', fontSize: 28 }} />
                             <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 700 }}>
                                 Intelligent Restaurant
