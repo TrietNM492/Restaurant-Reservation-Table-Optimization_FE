@@ -15,10 +15,10 @@ export default function AppPagination({ page, pageCount, total, pageSize = 10, o
         shape="rounded"
         siblingCount={0}
         sx={{
-          '& .MuiPaginationItem-root': { minWidth: 30, height: 30, borderRadius: '9px', color: '#67746c', fontSize: 12 },
-          '& .MuiPaginationItem-root.Mui-selected': { bgcolor: '#eaf4ee', color: '#176d4e', fontWeight: 700 },
-          '& .MuiPaginationItem-root.Mui-selected:hover': { bgcolor: '#dfefe5' },
-          '& .MuiPaginationItem-root.Mui-disabled': { color: '#c8cfca' },
+          '& .MuiPaginationItem-root': { minWidth: 30, height: 30, borderRadius: '9px', color: '#64748B', fontSize: 12 },
+          '& .MuiPaginationItem-root.Mui-selected': { bgcolor: '#F5F3FF', color: '#6D28D9', fontWeight: 700, border: '1px solid #C4B5FD' },
+          '& .MuiPaginationItem-root.Mui-selected:hover': { bgcolor: '#EDE9FE' },
+          '& .MuiPaginationItem-root.Mui-disabled': { color: '#CBD5E1' },
         }}
       />}
     </nav>

@@ -1,34 +1,48 @@
-import { createElement, lazy } from "react";
+import { createElement, lazy } from 'react';
 
-import AuthLayout from "../layouts/AuthLayout";
-import AdminLayout from "../layouts/AdminLayout";
+import AuthLayout from '../layouts/AuthLayout';
+import AdminLayout from '../layouts/AdminLayout';
 
-import { ROUTES } from "./routeConstants";
-import ProtectedRoute from "./guards/ProtectedRoute";
+import { ROUTES } from './routeConstants';
+import ProtectedRoute from './guards/ProtectedRoute';
 
-const LoginPage = lazy(() =>
-    import("../pages/LoginPage")
-);
-
-const DashboardPage = lazy(() =>
-    import("../pages/AdminDashboardPage")
-);
-
-const PageTemp = lazy(() =>
-    import("../pages/PageTemp")
-);
-
-const NotFoundPage = lazy(() =>
-    import("../pages/error/NotFound")
-);
+const HomePage = lazy(() => import('../pages/HomePage'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
+const RestaurantsPage = lazy(() => import('../pages/RestaurantsPage'));
+const RestaurantDetailPage = lazy(() => import('../pages/RestaurantDetailPage'));
+const ReservationPage = lazy(() => import('../pages/ReservationPage'));
+const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const PageTemp = lazy(() => import('../pages/PageTemp'));
+const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
 
 export const routeConfig = [
     {
         element: createElement(AuthLayout),
         children: [
             {
+                path: ROUTES.HOME,
+                element: createElement(HomePage),
+            },
+            {
                 path: ROUTES.LOGIN,
                 element: createElement(LoginPage),
+            },
+            {
+                path: ROUTES.REGISTER,
+                element: createElement(RegisterPage),
+            },
+            {
+                path: ROUTES.RESTAURANTS,
+                element: createElement(RestaurantsPage),
+            },
+            {
+                path: ROUTES.RESTAURANT_DETAIL,
+                element: createElement(RestaurantDetailPage),
+            },
+            {
+                path: ROUTES.RESERVATION_NEW,
+                element: createElement(ReservationPage),
             },
         ],
     },
@@ -39,13 +53,12 @@ export const routeConfig = [
             null,
             createElement(AdminLayout)
         ),
-
         children: [
             {
                 path: ROUTES.DASHBOARD,
-                element: createElement(DashboardPage)
-            }
-        ]
+                element: createElement(DashboardPage),
+            },
+        ],
     },
 
     {

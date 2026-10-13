@@ -18,12 +18,12 @@ export default function DatePicker({ label = 'Date', id = 'date-picker', classNa
           borderRadius: '12px',
           bgcolor: '#fff',
           fontSize: 13,
-          '& fieldset': { borderColor: '#e1e7e2' },
-          '&:hover fieldset': { borderColor: '#c4d1c8' },
-          '&.Mui-focused fieldset': { borderColor: '#39896c', borderWidth: 1 },
+          '& fieldset': { borderColor: '#E2E8F0' },
+          '&:hover fieldset': { borderColor: '#C4B5FD' },
+          '&.Mui-focused fieldset': { borderColor: '#6D28D9', borderWidth: 1.5 },
         },
         '& .MuiInputBase-input': { px: '13px', py: '11px' },
-        '& .MuiInputLabel-root': { color: '#536159', fontSize: 13 },
+        '& .MuiInputLabel-root': { color: '#475569', fontSize: 13 },
       }}
     />
   );
