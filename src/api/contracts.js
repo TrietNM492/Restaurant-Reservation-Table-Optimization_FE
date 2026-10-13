@@ -95,18 +95,88 @@ export const menuApi = {
   },
 };
 
+const extractErrorMessage = (error, fallback = 'Unable to create reservation.') => {
+  const data = error?.response?.data;
+  if (typeof data?.message === 'string' && data.message.trim()) {
+    return data.message;
+  }
+  if (Array.isArray(data?.message)) {
+    return data.message
+      .map((item) => (typeof item === 'string' ? item : item?.message || JSON.stringify(item)))
+      .filter(Boolean)
+      .join('; ');
+  }
+  if (data?.message && typeof data.message === 'object') {
+    const fieldErrors = Object.entries(data.message)
+      .map(([field, msg]) => (typeof msg === 'string' ? `${field}: ${msg}` : `${field}: ${JSON.stringify(msg)}`))
+      .filter(Boolean);
+    if (fieldErrors.length > 0) {
+      return fieldErrors.join('; ');
+    }
+  }
+  if (typeof data?.error === 'string' && data.error.trim()) {
+    return data.error;
+  }
+  if (typeof error?.message === 'string' && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+};
+
 export const reservationApi = {
   create: async (payload) => {
-    const response = await api.post('/reservations', payload).catch((error) => {
-      const message = error.response?.data?.message ?? 'Unable to create reservation.';
-      throw new Error(typeof message === 'string' ? message : 'Unable to create reservation.');
-    });
-
-    return unwrapData(response);
+    try {
+      const response = await api.post('/reservations', payload);
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to create reservation.');
+      const customError = new Error(message);
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
   },
 
   listMine: async () => {
     const response = await api.get('/reservations/me');
     return unwrapData(response);
+  },
+};
+
+export const tableApi = {
+  getAll: async () => {
+    let currentPage = 0;
+    const pageSize = 20;
+    let allTables = [];
+    let hasNextPage = true;
+
+    while (hasNextPage) {
+      const payload = await api.get('/tables', {
+        params: { page: currentPage, size: pageSize },
+      });
+
+      const pageData = payload?.data;
+
+      if (!pageData || typeof pageData !== 'object') {
+        throw new Error('Dữ liệu phân trang nhận được từ máy chủ không hợp lệ.');
+      }
+      if (!Array.isArray(pageData.result)) {
+        throw new Error('Dữ liệu danh sách bàn không phải là mảng.');
+      }
+      if (!pageData.meta || typeof pageData.meta !== 'object') {
+        throw new Error('Thiếu thông tin phân trang (meta) từ máy chủ.');
+      }
+      if (typeof pageData.meta.hasNext !== 'boolean') {
+        throw new Error('Thuộc tính hasNext trong dữ liệu phân trang không hợp lệ.');
+      }
+
+      allTables = allTables.concat(pageData.result);
+      hasNextPage = pageData.meta.hasNext;
+      currentPage++;
+    }
+
+    return allTables;
   },
 };

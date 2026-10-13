@@ -1,7 +1,28 @@
 import TextField from '@mui/material/TextField';
 
-export default function Input({ label, id, error, hint, className = '', ...props }) {
-  const { inputProps, ...textFieldProps } = props;
+export default function Input({
+  label,
+  id,
+  error,
+  hint,
+  className = '',
+  slotProps,
+  ...props
+}) {
+  const { inputProps, InputLabelProps, ...textFieldProps } = props;
+
+  const mergedSlotProps = {
+    ...slotProps,
+    htmlInput: {
+      'aria-invalid': Boolean(error),
+      ...inputProps,
+      ...slotProps?.htmlInput,
+    },
+    inputLabel: {
+      ...(InputLabelProps || {}),
+      ...slotProps?.inputLabel,
+    },
+  };
 
   return (
     <TextField
@@ -13,7 +34,7 @@ export default function Input({ label, id, error, hint, className = '', ...props
       variant="outlined"
       size="small"
       fullWidth
-      slotProps={{ htmlInput: { 'aria-invalid': Boolean(error), ...inputProps } }}
+      slotProps={mergedSlotProps}
       {...textFieldProps}
       sx={{
         '& .MuiOutlinedInput-root': {
