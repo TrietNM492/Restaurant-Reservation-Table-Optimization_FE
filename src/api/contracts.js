@@ -155,8 +155,15 @@ export const reservationApi = {
   },
 
   listMine: async () => {
-    const response = await api.get('/reservations/me');
-    return unwrapData(response);
+    try {
+      const response = await api.get('/reservations/me');
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to load reservations.');
+      const customError = new Error(message);
+      customError.response = error?.response;
+      throw customError;
+    }
   },
 
   cancel: async (id) => {

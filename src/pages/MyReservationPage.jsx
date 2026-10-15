@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Container, Stack, Typography } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -79,6 +79,15 @@ const formatTables = (tables) => {
     .join(', ');
 };
 
+const sortReservations = (items) => {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a, b) => {
+    const timeA = new Date(a.startTime).getTime() || 0;
+    const timeB = new Date(b.startTime).getTime() || 0;
+    return timeB - timeA;
+  });
+};
+
 function MyReservationPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,21 +102,44 @@ function MyReservationPage() {
   const [cancelError, setCancelError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
-  const fetchReservations = async () => {
+  const fetchReservations = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await reservationApi.listMine();
-      setReservations(Array.isArray(data) ? data : []);
+      setReservations(sortReservations(data));
     } catch (err) {
       setError(err.message || 'Unable to load reservations.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchReservations();
+    let ignore = false;
+
+    const loadReservations = async () => {
+      try {
+        const data = await reservationApi.listMine();
+        if (!ignore) {
+          setReservations(sortReservations(data));
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError(err.message || 'Unable to load reservations.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadReservations();
+
+    return () => {
+      ignore = true;
+    };
   }, [location.key]);
 
   const handleOpenCancelModal = (res) => {
