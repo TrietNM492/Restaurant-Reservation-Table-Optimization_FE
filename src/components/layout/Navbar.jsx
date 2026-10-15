@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AppBar,
   Box,
@@ -19,6 +19,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { useNavigate } from 'react-router-dom';
 
 import Button from '../ui/Button';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 const navItems = [
   { label: 'Home', href: '/' },
@@ -30,6 +31,20 @@ const navItems = [
 function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+
+  const allNavItems = useMemo(() => {
+    if (isAuthenticated) {
+      if (navItems.some((item) => item.href === '/reservations/me')) {
+        return navItems;
+      }
+      return [
+        ...navItems,
+        { label: 'My Reservations', href: '/reservations/me' },
+      ];
+    }
+    return navItems;
+  }, [isAuthenticated]);
 
   const handleNav = (path) => {
     if (path.startsWith('/#')) {
@@ -93,7 +108,7 @@ function Navbar() {
           </Box>
 
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2.5, mx: 'auto' }}>
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <Button
                 key={item.label}
                 color="inherit"
@@ -136,7 +151,7 @@ function Navbar() {
       <Drawer anchor="right" open={mobileOpen} onClose={() => setMobileOpen(false)}>
         <Box sx={{ width: 280, p: 2 }} role="presentation">
           <List>
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <ListItem key={item.label} disablePadding>
                 <ListItemButton onClick={() => handleNav(item.href)}>
                   <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 600 }} />

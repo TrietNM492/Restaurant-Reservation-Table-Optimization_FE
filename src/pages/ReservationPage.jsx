@@ -1,12 +1,26 @@
-import { Alert, Container, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Box, Container, Paper, Stack, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import ErrorState from '../components/ui/ErrorState';
 import Input from '../components/ui/Input';
+import Loading from '../components/ui/Loading';
 import Select from '../components/ui/Select';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import { reservationApi, tableApi } from '../api/contracts';
+import { ROUTES } from '../routes/routeConstants';
+
+const statusTones = {
+  PENDING: 'warning',
+  CONFIRMED: 'info',
+  IN_PROGRESS: 'neutral',
+  COMPLETED: 'success',
+  CANCELLED: 'danger',
+  NO_SHOW: 'danger',
+};
 
 const formatDateTimeLocal = (date) => {
   const year = date.getFullYear();
@@ -15,6 +29,13 @@ const formatDateTimeLocal = (date) => {
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+const isoToDateTimeLocal = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+  return formatDateTimeLocal(date);
 };
 
 const getDefaultDateTimes = () => {
@@ -46,30 +67,107 @@ const reservationTypeOptions = [
 ];
 
 function ReservationPage() {
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isEditMode = Boolean(id);
+
   const [values, setValues] = useState(() => ({
     partySize: 'SMALL',
     reservationType: 'TABLE',
     ...getDefaultDateTimes(),
     note: '',
   }));
+
+  const [currentReservation, setCurrentReservation] = useState(null);
+  const [reservationLoading, setReservationLoading] = useState(isEditMode);
+  const [reservationError, setReservationError] = useState('');
+
   const [tables, setTables] = useState([]);
   const [tablesLoading, setTablesLoading] = useState(false);
   const [tablesError, setTablesError] = useState('');
   const [selectedTableId, setSelectedTableId] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
 
+  const isPending = currentReservation ? currentReservation.reservationStatus === 'PENDING' : true;
+  const isNonEditable = isEditMode && currentReservation && !isPending;
+
+  const populateFromReservation = (res) => {
+    setCurrentReservation(res);
+    setValues({
+      partySize: res.partySize || 'SMALL',
+      reservationType: res.reservationType || 'TABLE',
+      startTime: isoToDateTimeLocal(res.startTime),
+      endTime: isoToDateTimeLocal(res.endTime),
+      note: res.note || '',
+    });
+    if (Array.isArray(res.tables) && res.tables.length > 0) {
+      setSelectedTableId(String(res.tables[0].id));
+    } else {
+      setSelectedTableId('');
+    }
+  };
+
+  const fetchReservation = async () => {
+    if (!isEditMode) return;
+    setReservationLoading(true);
+    setReservationError('');
+
+    const stateRes = location.state?.reservation;
+    if (stateRes && String(stateRes.id) === String(id)) {
+      populateFromReservation(stateRes);
+      setReservationLoading(false);
+      return;
+    }
+
+    try {
+      const list = await reservationApi.listMine();
+      const match = Array.isArray(list)
+        ? list.find((item) => String(item.id) === String(id))
+        : null;
+
+      if (!match) {
+        setReservationError(`Reservation #${id} was not found in your bookings.`);
+        setCurrentReservation(null);
+      } else {
+        populateFromReservation(match);
+      }
+    } catch (err) {
+      setReservationError(err.message || 'Unable to load reservation details.');
+      setCurrentReservation(null);
+    } finally {
+      setReservationLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isEditMode) {
+      fetchReservation();
+    } else {
+      setReservationLoading(false);
+      setReservationError('');
+      setCurrentReservation(null);
+    }
+  }, [id, isEditMode]);
+
   const fetchTables = async () => {
     setTablesLoading(true);
     setTablesError('');
-    setSelectedTableId('');
+    if (!isEditMode) {
+      setSelectedTableId('');
+    }
     try {
       const data = await tableApi.getAll();
       setTables(data);
     } catch (err) {
       setTables([]);
-      setSelectedTableId('');
+      if (!isEditMode) {
+        setSelectedTableId('');
+      }
       setTablesError(err.message || 'Không thể tải danh sách bàn từ máy chủ.');
     } finally {
       setTablesLoading(false);
@@ -79,6 +177,11 @@ function ReservationPage() {
   useEffect(() => {
     fetchTables();
   }, []);
+
+  const assignedTable = useMemo(
+    () => (isEditMode && currentReservation?.tables?.[0] ? currentReservation.tables[0] : null),
+    [isEditMode, currentReservation],
+  );
 
   const availableTables = useMemo(
     () => tables.filter((t) => t.statusCode !== 'LOCKED'),
@@ -90,23 +193,68 @@ function ReservationPage() {
     [tables],
   );
 
+  const isAssignedTableLocked = useMemo(() => {
+    if (!assignedTable || tables.length === 0) return false;
+    const match = tables.find((t) => String(t.id) === String(assignedTable.id));
+    return match ? match.statusCode === 'LOCKED' : false;
+  }, [assignedTable, tables]);
+
+  const isSelectedTableLocked = useMemo(() => {
+    if (!selectedTableId || tables.length === 0) return false;
+    const match = tables.find((t) => String(t.id) === String(selectedTableId));
+    return match ? match.statusCode === 'LOCKED' : false;
+  }, [selectedTableId, tables]);
+
+  const selectableTables = useMemo(() => {
+    const list = [...availableTables];
+
+    if (assignedTable) {
+      const alreadyIncluded = list.some((t) => String(t.id) === String(assignedTable.id));
+      if (!alreadyIncluded) {
+        const matchInAll = tables.find((t) => String(t.id) === String(assignedTable.id));
+        if (matchInAll) {
+          list.unshift(matchInAll);
+        } else {
+          list.unshift({
+            id: assignedTable.id,
+            tableNumber: assignedTable.tableNumber,
+            capacity: assignedTable.capacity,
+            area: { name: 'Assigned' },
+          });
+        }
+      }
+    }
+
+    return list;
+  }, [availableTables, assignedTable, tables]);
+
   const tableOptions = useMemo(() => {
     const placeholderLabel = tablesLoading
       ? 'Đang tải danh sách bàn...'
       : tablesError
         ? 'Lỗi tải danh sách bàn'
-        : availableTables.length === 0
+        : selectableTables.length === 0
           ? 'Không có bàn khả dụng'
           : '-- Chọn bàn --';
 
     return [
       { label: placeholderLabel, value: '' },
-      ...availableTables.map((t) => ({
-        label: `Bàn ${t.tableNumber} — ${t.capacity} chỗ (${t.area?.name || 'Chung'})`,
-        value: String(t.id),
-      })),
+      ...selectableTables.map((t) => {
+        let label = `Bàn ${t.tableNumber} — ${t.capacity} chỗ (${t.area?.name || 'Chung'})`;
+        if (assignedTable && String(t.id) === String(assignedTable.id)) {
+          if (t.statusCode === 'LOCKED') {
+            label += ' (Hiện tại - Đang khóa)';
+          } else {
+            label += ' (Hiện tại)';
+          }
+        }
+        return {
+          label,
+          value: String(t.id),
+        };
+      }),
     ];
-  }, [availableTables, tablesLoading, tablesError]);
+  }, [selectableTables, tablesLoading, tablesError, assignedTable]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -126,6 +274,25 @@ function ReservationPage() {
 
     setSubmitError('');
     setSubmitSuccess('');
+
+    if (isEditMode) {
+      if (isNonEditable) {
+        setSubmitError(`Only reservations with PENDING status can be edited. Current status: ${currentReservation?.reservationStatus}.`);
+        return;
+      }
+      if (isSelectedTableLocked) {
+        setSubmitError(
+          availableTables.length === 0
+            ? 'Bàn hiện tại đang bị khóa (LOCKED) và không có bàn khả dụng nào khác để thay thế.'
+            : 'Bàn hiện tại đang bị khóa (LOCKED). Vui lòng chọn một bàn khả dụng khác từ danh sách.'
+        );
+        return;
+      }
+      if (availableTables.length === 0) {
+        setSubmitError('Hiện tại không có bàn khả dụng nào để cập nhật đặt bàn.');
+        return;
+      }
+    }
 
     if (!selectedTableId) {
       setSubmitError('Please select a table.');
@@ -191,16 +358,27 @@ function ReservationPage() {
         note: values.note ? values.note.trim() : '',
       };
 
-      const response = await reservationApi.create(payload);
-      const reference = response?.reservationNo || response?.id || 'Confirmed';
-      setSubmitSuccess(`Reservation created successfully! Reference: ${reference}`);
-      setSelectedTableId('');
-      setValues((current) => ({
-        ...current,
-        note: '',
-      }));
+      if (isEditMode) {
+        const response = await reservationApi.update(id, payload);
+        const reference = response?.reservationNo || currentReservation?.reservationNo || `Reservation #${id}`;
+        navigate(ROUTES.RESERVATIONS_ME, {
+          state: { message: `Reservation ${reference} updated successfully!` },
+        });
+      } else {
+        const response = await reservationApi.create(payload);
+        const reference = response?.reservationNo || response?.id || 'Confirmed';
+        setSubmitSuccess(`Reservation created successfully! Reference: ${reference}`);
+        setSelectedTableId('');
+        setValues((current) => ({
+          ...current,
+          note: '',
+        }));
+      }
     } catch (err) {
-      setSubmitError(err.message || 'Unable to create reservation. Please try again.');
+      const fallbackMessage = isEditMode
+        ? 'Unable to update reservation. Please try again.'
+        : 'Unable to create reservation. Please try again.';
+      setSubmitError(err.message || fallbackMessage);
     } finally {
       setSubmitting(false);
     }
@@ -215,101 +393,192 @@ function ReservationPage() {
           onSubmit={handleSubmit}
           sx={{ p: { xs: 3, md: 5 }, border: '1px solid', borderColor: 'divider' }}
         >
-          <Typography variant="h3" sx={{ mb: 2 }}>
-            Reserve your table
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 1 }}>
+            <Typography variant="h3">
+              {isEditMode ? 'Update reservation' : 'Reserve your table'}
+            </Typography>
+            {isEditMode && currentReservation?.reservationStatus ? (
+              <Badge tone={statusTones[currentReservation.reservationStatus] || 'neutral'}>
+                {currentReservation.reservationStatus}
+              </Badge>
+            ) : null}
+          </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Use the contract-aligned reservation payload and start/end time fields to schedule your dining experience.
+            {isEditMode
+              ? currentReservation?.reservationNo
+                ? `Reference: ${currentReservation.reservationNo}`
+                : `Reservation #${id}`
+              : 'Use the contract-aligned reservation payload and start/end time fields to schedule your dining experience.'}
           </Typography>
 
-          <Stack spacing={2}>
-            {tablesError ? (
-              <Alert
-                severity="error"
-                action={
-                  <Button variant="ghost" size="small" onClick={fetchTables}>
-                    Thử lại
-                  </Button>
-                }
+          {reservationLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <Loading label="Loading reservation details..." />
+            </Box>
+          ) : reservationError ? (
+            <Stack spacing={2} sx={{ py: 3 }}>
+              <ErrorState
+                title="Unable to load reservation"
+                description={reservationError}
+                onRetry={fetchReservation}
+              />
+              <Button
+                variant="secondary"
+                onClick={() => navigate(ROUTES.RESERVATIONS_ME)}
+                sx={{ alignSelf: 'center' }}
               >
-                {tablesError}
-              </Alert>
-            ) : null}
+                Back to My Reservations
+              </Button>
+            </Stack>
+          ) : (
+            <Stack spacing={2}>
+              {isNonEditable ? (
+                <Alert severity="warning">
+                  Only reservations with <strong>PENDING</strong> status can be edited. This reservation is currently{' '}
+                  <strong>{currentReservation?.reservationStatus}</strong> and cannot be modified.
+                </Alert>
+              ) : null}
 
-            <Select
-              label="Table"
-              name="tableId"
-              value={selectedTableId}
-              onChange={handleTableChange}
-              options={tableOptions}
-              disabled={submitting || tablesLoading || Boolean(tablesError) || availableTables.length === 0}
-            />
+              {tablesError ? (
+                <Alert
+                  severity="error"
+                  action={
+                    <Button variant="ghost" size="small" onClick={fetchTables}>
+                      Thử lại
+                    </Button>
+                  }
+                >
+                  {tablesError}
+                </Alert>
+              ) : null}
 
-            {lockedCount > 0 ? (
-              <Typography variant="caption" color="text.secondary">
-                * Có {lockedCount} bàn đang trong trạng thái khóa (LOCKED) và không thể chọn.
-              </Typography>
-            ) : null}
+              {isAssignedTableLocked && isSelectedTableLocked ? (
+                <Alert severity="warning">
+                  {availableTables.length === 0
+                    ? `Bàn hiện tại của bạn (Bàn ${assignedTable?.tableNumber}) đang trong trạng thái khóa (LOCKED) và hiện không có bàn khả dụng nào khác để đổi. Không thể lưu thay đổi vào lúc này.`
+                    : `Bàn hiện tại của bạn (Bàn ${assignedTable?.tableNumber}) đang trong trạng thái khóa (LOCKED). Bạn phải chọn một bàn khả dụng khác từ danh sách để có thể lưu thay đổi.`}
+                </Alert>
+              ) : isAssignedTableLocked && !isSelectedTableLocked ? (
+                <Alert severity="info">
+                  Bàn ban đầu (Bàn {assignedTable?.tableNumber}) đang bị khóa. Bạn đã chọn một bàn khả dụng khác để thay thế.
+                </Alert>
+              ) : isEditMode && !tablesLoading && !tablesError && availableTables.length === 0 ? (
+                <Alert severity="warning">
+                  Hiện tại không có bàn khả dụng nào trong hệ thống.
+                </Alert>
+              ) : null}
 
-            <Input
-              label="Start time"
-              name="startTime"
-              type="datetime-local"
-              value={values.startTime}
-              onChange={handleChange}
-              disabled={submitting}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Input
-              label="End time"
-              name="endTime"
-              type="datetime-local"
-              value={values.endTime}
-              onChange={handleChange}
-              disabled={submitting}
-              InputLabelProps={{ shrink: true }}
-            />
-            <Select
-              label="Party size"
-              name="partySize"
-              value={values.partySize}
-              onChange={handleChange}
-              options={partySizeOptions}
-              disabled={submitting}
-            />
-            <Select
-              label="Reservation type"
-              name="reservationType"
-              value={values.reservationType}
-              onChange={handleChange}
-              options={reservationTypeOptions}
-              disabled={submitting}
-            />
-            <Input
-              label="Note"
-              name="note"
-              value={values.note}
-              onChange={handleChange}
-              multiline
-              minRows={3}
-              disabled={submitting}
-            />
+              <Select
+                label="Table"
+                name="tableId"
+                value={selectedTableId}
+                onChange={handleTableChange}
+                options={tableOptions}
+                disabled={
+                  isNonEditable ||
+                  submitting ||
+                  tablesLoading ||
+                  Boolean(tablesError) ||
+                  (isEditMode ? selectableTables.length === 0 : availableTables.length === 0)
+                }
+              />
 
-            {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-            {submitSuccess ? <Alert severity="success">{submitSuccess}</Alert> : null}
+              {lockedCount > 0 ? (
+                <Typography variant="caption" color="text.secondary">
+                  * Có {lockedCount} bàn đang trong trạng thái khóa (LOCKED) và không thể chọn.
+                </Typography>
+              ) : null}
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={submitting || tablesLoading || Boolean(tablesError) || availableTables.length === 0}
-            >
-              {tablesLoading
-                ? 'Đang tải danh sách bàn...'
-                : submitting
-                  ? 'Creating reservation...'
-                  : 'Confirm reservation'}
-            </Button>
-          </Stack>
+              <Input
+                label="Start time"
+                name="startTime"
+                type="datetime-local"
+                value={values.startTime}
+                onChange={handleChange}
+                disabled={isNonEditable || submitting}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Input
+                label="End time"
+                name="endTime"
+                type="datetime-local"
+                value={values.endTime}
+                onChange={handleChange}
+                disabled={isNonEditable || submitting}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Select
+                label="Party size"
+                name="partySize"
+                value={values.partySize}
+                onChange={handleChange}
+                options={partySizeOptions}
+                disabled={isNonEditable || submitting}
+              />
+              <Select
+                label="Reservation type"
+                name="reservationType"
+                value={values.reservationType}
+                onChange={handleChange}
+                options={reservationTypeOptions}
+                disabled={isNonEditable || submitting}
+              />
+              <Input
+                label="Note"
+                name="note"
+                value={values.note}
+                onChange={handleChange}
+                multiline
+                minRows={3}
+                disabled={isNonEditable || submitting}
+              />
+
+              {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+              {submitSuccess ? <Alert severity="success">{submitSuccess}</Alert> : null}
+
+              {isEditMode ? (
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={
+                      isNonEditable ||
+                      submitting ||
+                      tablesLoading ||
+                      Boolean(tablesError) ||
+                      availableTables.length === 0 ||
+                      isSelectedTableLocked
+                    }
+                  >
+                    {tablesLoading
+                      ? 'Đang tải danh sách bàn...'
+                      : submitting
+                        ? 'Saving changes...'
+                        : 'Save changes'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => navigate(ROUTES.RESERVATIONS_ME)}
+                  >
+                    Back to My Reservations
+                  </Button>
+                </Box>
+              ) : (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={submitting || tablesLoading || Boolean(tablesError) || availableTables.length === 0}
+                >
+                  {tablesLoading
+                    ? 'Đang tải danh sách bàn...'
+                    : submitting
+                      ? 'Creating reservation...'
+                      : 'Confirm reservation'}
+                </Button>
+              )}
+            </Stack>
+          )}
         </Paper>
       </Container>
       <Footer />

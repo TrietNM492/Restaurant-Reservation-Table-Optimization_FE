@@ -12,6 +12,7 @@ const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 const RestaurantsPage = lazy(() => import('../pages/RestaurantsPage'));
 const RestaurantDetailPage = lazy(() => import('../pages/RestaurantDetailPage'));
 const ReservationPage = lazy(() => import('../pages/ReservationPage'));
+const MyReservationPage = lazy(() => import('../pages/MyReservationPage'));
 const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
 const PageTemp = lazy(() => import('../pages/PageTemp'));
 const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
@@ -42,6 +43,24 @@ export const routeConfig = [
             },
             {
                 path: ROUTES.RESERVATION_NEW,
+                element: createElement(ReservationPage),
+            },
+        ],
+    },
+
+    {
+        element: createElement(
+            ProtectedRoute,
+            null,
+            createElement(AuthLayout)
+        ),
+        children: [
+            {
+                path: ROUTES.RESERVATIONS_ME,
+                element: createElement(MyReservationPage),
+            },
+            {
+                path: ROUTES.RESERVATION_EDIT,
                 element: createElement(ReservationPage),
             },
         ],

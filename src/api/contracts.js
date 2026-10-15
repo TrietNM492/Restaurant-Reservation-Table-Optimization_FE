@@ -139,6 +139,21 @@ export const reservationApi = {
     }
   },
 
+  update: async (id, payload) => {
+    try {
+      const response = await api.put(`/reservations/${id}`, payload);
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to update reservation.');
+      const customError = new Error(message);
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
+  },
+
   listMine: async () => {
     const response = await api.get('/reservations/me');
     return unwrapData(response);
