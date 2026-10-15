@@ -133,7 +133,11 @@ function MyReservationPage() {
       setReservations((prev) =>
         prev.map((r) =>
           r.id === cancellingReservation.id
-            ? { ...r, reservationStatus: 'CANCELLED' }
+            ? {
+                ...r,
+                ...(updated || {}),
+                reservationStatus: updated?.reservationStatus || 'CANCELLED',
+              }
             : r
         )
       );

@@ -173,6 +173,36 @@ export const reservationApi = {
       throw customError;
     }
   },
+
+  checkIn: async (id) => {
+    try {
+      const response = await api.post(`/reservations/${id}/check-in`);
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to check in reservation.');
+      const customError = new Error(message);
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
+  },
+
+  complete: async (id) => {
+    try {
+      const response = await api.post(`/reservations/${id}/complete`);
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to complete reservation.');
+      const customError = new Error(message);
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
+  },
 };
 
 export const tableApi = {
