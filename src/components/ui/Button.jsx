@@ -1,9 +1,14 @@
 import MuiButton from '@mui/material/Button';
 
 export default function Button({
-  children, variant = 'primary', size = 'medium', className = '', type = 'button', ...props
+  children,
+  variant = 'primary',
+  size = 'medium',
+  className = '',
+  type = 'button',
+  ...props
 }) {
-  const muiVariant = variant === 'primary' || variant === 'danger' ? 'contained' : variant === 'secondary' ? 'outlined' : 'text';
+  const muiVariant = variant === 'danger' ? 'contained' : variant === 'secondary' ? 'outlined' : variant === 'ghost' ? 'text' : 'contained';
 
   return (
     <MuiButton
@@ -18,12 +23,29 @@ export default function Button({
         borderRadius: size === 'small' ? '10px' : '12px',
         textTransform: 'none',
         fontSize: size === 'small' ? 12 : 13,
-        fontWeight: 600,
-        boxShadow: variant === 'primary' || variant === 'danger' ? '0 3px 8px rgba(22, 122, 90, .15)' : 'none',
-        ...(variant === 'primary' && { bgcolor: '#167a5a', '&:hover': { bgcolor: '#105e45' } }),
-        ...(variant === 'danger' && { bgcolor: '#c74949', '&:hover': { bgcolor: '#ad3636' } }),
-        ...(variant === 'secondary' && { borderColor: '#e2e8e3', color: '#34423a', '&:hover': { borderColor: '#cad5cd', bgcolor: '#f8faf8' } }),
-        ...(variant === 'ghost' && { color: '#58675e', '&:hover': { bgcolor: '#f2f6f3', color: '#26372e' } }),
+        fontWeight: 700,
+        letterSpacing: 0,
+        boxShadow: variant === 'primary' || variant === 'danger' ? '0 8px 20px rgba(109, 40, 217, 0.18)' : 'none',
+        transition: 'all 0.2s ease',
+        ...(variant === 'primary' && {
+          background: 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 100%)',
+          color: '#fff',
+          '&:hover': { background: 'linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%)' },
+        }),
+        ...(variant === 'danger' && {
+          background: '#DC2626',
+          '&:hover': { background: '#B91C1C' },
+        }),
+        ...(variant === 'secondary' && {
+          borderColor: '#C4B5FD',
+          color: '#6D28D9',
+          backgroundColor: '#FFFFFF',
+          '&:hover': { borderColor: '#8B5CF6', backgroundColor: '#F5F3FF' },
+        }),
+        ...(variant === 'ghost' && {
+          color: '#6D28D9',
+          '&:hover': { backgroundColor: '#F5F3FF', color: '#5B21B6' },
+        }),
       }}
       {...props}
     >

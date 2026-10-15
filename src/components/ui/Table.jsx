@@ -8,11 +8,12 @@ import TableRow from '@mui/material/TableRow';
 
 export default function Table({ columns, rows, getRowKey, className = '', emptyMessage = 'No records found', ...props }) {
   return (
-    <TableContainer className={`ui-table-wrap ${className}`.trim()} component={Paper} elevation={0} sx={{ maxHeight: 440, borderRadius: 0 }}>
+    <TableContainer className={`ui-table-wrap ${className}`.trim()} component={Paper} elevation={0} sx={{ maxHeight: 440, borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
       <MuiTable className="ui-table" stickyHeader size="small" {...props} sx={{
-        '& .MuiTableCell-root': { px: '14px', py: '12px', borderBottomColor: '#f0f2f0', color: '#4d5a52', fontSize: 12, whiteSpace: 'nowrap' },
-        '& .MuiTableHead-root .MuiTableCell-root': { bgcolor: '#fbfcfb', color: '#87928b', fontSize: 10, fontWeight: 700, letterSpacing: '.075em', textTransform: 'uppercase', borderBottomColor: '#edf0ed' },
-        '& .MuiTableBody-root .MuiTableRow-root:hover': { bgcolor: '#fafcfb' },
+        '& .MuiTableCell-root': { px: '14px', py: '12px', borderBottomColor: '#F1E8FF', color: '#475569', fontSize: 12, whiteSpace: 'nowrap' },
+        '& .MuiTableHead-root .MuiTableCell-root': { bgcolor: '#F8FAFC', color: '#475569', fontSize: 10, fontWeight: 700, letterSpacing: '.075em', textTransform: 'uppercase', borderBottomColor: '#E2E8F0' },
+        '& .MuiTableBody-root .MuiTableRow-root:hover': { bgcolor: '#F5F3FF' },
+        '& .MuiTableBody-root .MuiTableRow-root': { transition: 'background-color 0.2s ease' },
       }}>
         <TableHead><TableRow>{columns.map((column) => <TableCell key={column.key} scope="col">{column.label}</TableCell>)}</TableRow></TableHead>
         <TableBody>

@@ -21,13 +21,13 @@ export default function Input({ label, id, error, hint, className = '', ...props
           borderRadius: '12px',
           bgcolor: '#fff',
           fontSize: 13,
-          '& fieldset': { borderColor: error ? '#d55050' : '#e1e7e2' },
-          '&:hover fieldset': { borderColor: error ? '#d55050' : '#c4d1c8' },
-          '&.Mui-focused fieldset': { borderColor: '#39896c', borderWidth: 1, boxShadow: '0 0 0 3px rgba(22, 122, 90, .09)' },
+          '& fieldset': { borderColor: error ? '#DC2626' : '#E2E8F0' },
+          '&:hover fieldset': { borderColor: error ? '#DC2626' : '#C4B5FD' },
+          '&.Mui-focused fieldset': { borderColor: '#6D28D9', borderWidth: 1.5, boxShadow: '0 0 0 3px rgba(109, 40, 217, 0.12)' },
         },
         '& .MuiInputBase-input': { px: '13px', py: '11px', boxSizing: 'border-box' },
-        '& .MuiInputLabel-root': { color: '#536159', fontSize: 13 },
-        '& .MuiFormHelperText-root': { mx: 0, mt: '6px', color: error ? '#c34242' : '#839087', fontSize: 11 },
+        '& .MuiInputLabel-root': { color: '#64748B', fontSize: 13 },
+        '& .MuiFormHelperText-root': { mx: 0, mt: '6px', color: error ? '#DC2626' : '#64748B', fontSize: 11 },
       }}
     />
   );
