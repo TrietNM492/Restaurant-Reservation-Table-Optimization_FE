@@ -8,6 +8,7 @@ import Card from '../components/ui/Card';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 import Loading from '../components/ui/Loading';
+import Modal from '../components/ui/Modal';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import { reservationApi } from '../api/contracts';
@@ -87,6 +88,11 @@ function MyReservationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [cancellingReservation, setCancellingReservation] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
+
   const fetchReservations = async () => {
     setLoading(true);
     setError('');
@@ -103,6 +109,43 @@ function MyReservationPage() {
   useEffect(() => {
     fetchReservations();
   }, [location.key]);
+
+  const handleOpenCancelModal = (res) => {
+    if (cancelLoading) return;
+    setCancelError('');
+    setCancellingReservation(res);
+  };
+
+  const handleCloseCancelModal = () => {
+    if (cancelLoading) return;
+    setCancellingReservation(null);
+    setCancelError('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancellingReservation?.id || cancelLoading) return;
+
+    setCancelLoading(true);
+    setCancelError('');
+
+    try {
+      const updated = await reservationApi.cancel(cancellingReservation.id);
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === cancellingReservation.id
+            ? { ...r, reservationStatus: 'CANCELLED' }
+            : r
+        )
+      );
+      const refNo = updated?.reservationNo || cancellingReservation.reservationNo || `#${cancellingReservation.id}`;
+      setActionSuccess(`Reservation ${refNo} has been cancelled successfully.`);
+      setCancellingReservation(null);
+    } catch (err) {
+      setCancelError(err.message || 'Unable to cancel reservation. Please try again.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   return (
     <>
@@ -125,6 +168,16 @@ function MyReservationPage() {
         {flashMessage ? (
           <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
             {flashMessage}
+          </Alert>
+        ) : null}
+
+        {actionSuccess ? (
+          <Alert
+            severity="success"
+            onClose={() => setActionSuccess('')}
+            sx={{ mb: 3, borderRadius: 2 }}
+          >
+            {actionSuccess}
           </Alert>
         ) : null}
 
@@ -152,6 +205,7 @@ function MyReservationPage() {
           <Stack spacing={2.5}>
             {reservations.map((res) => {
               const isPending = res.reservationStatus === 'PENDING';
+              const canCancel = res.reservationStatus === 'PENDING' || res.reservationStatus === 'CONFIRMED';
               return (
                 <Card key={res.id} sx={{ p: { xs: 2.5, md: 3 } }}>
                   <Stack spacing={2}>
@@ -165,19 +219,36 @@ function MyReservationPage() {
                         </Badge>
                       </Box>
 
-                      {isPending ? (
-                        <Button
-                          variant="secondary"
-                          size="small"
-                          onClick={() =>
-                            navigate(`/reservations/${res.id}/edit`, {
-                              state: { reservation: res },
-                            })
-                          }
-                        >
-                          Edit
-                        </Button>
-                      ) : null}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {isPending ? (
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={() =>
+                              navigate(`/reservations/${res.id}/edit`, {
+                                state: { reservation: res },
+                              })
+                            }
+                          >
+                            Edit
+                          </Button>
+                        ) : null}
+
+                        {canCancel ? (
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            onClick={() => handleOpenCancelModal(res)}
+                            sx={{
+                              color: '#DC2626',
+                              borderColor: '#FECACA',
+                              '&:hover': { borderColor: '#DC2626', bgcolor: '#FEF2F2' },
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        ) : null}
+                      </Box>
                     </Box>
 
                     <Box
@@ -239,6 +310,94 @@ function MyReservationPage() {
             })}
           </Stack>
         )}
+
+        <Modal
+          open={Boolean(cancellingReservation)}
+          onClose={cancelLoading ? () => {} : handleCloseCancelModal}
+          title="Cancel Reservation"
+          size="medium"
+        >
+          <Stack spacing={2.5}>
+            <Typography variant="body2" color="text.secondary">
+              Are you sure you want to cancel reservation{' '}
+              <strong>
+                {cancellingReservation?.reservationNo || `#${cancellingReservation?.id}`}
+              </strong>
+              ? This action cannot be undone.
+            </Typography>
+
+            {cancellingReservation ? (
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                  gap: 1.5,
+                }}
+              >
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Date & Time
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {formatTimeRange(cancellingReservation.startTime, cancellingReservation.endTime)}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Table(s)
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {formatTables(cancellingReservation.tables)}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Party Size
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {partySizeLabels[cancellingReservation.partySize] || cancellingReservation.partySize}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Current Status
+                  </Typography>
+                  <Badge tone={statusTones[cancellingReservation.reservationStatus] || 'neutral'}>
+                    {cancellingReservation.reservationStatus}
+                  </Badge>
+                </Box>
+              </Box>
+            ) : null}
+
+            {cancelError ? (
+              <Alert severity="error">{cancelError}</Alert>
+            ) : null}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pt: 1 }}>
+              <Button
+                variant="secondary"
+                onClick={handleCloseCancelModal}
+                disabled={cancelLoading}
+              >
+                Keep Reservation
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleConfirmCancel}
+                disabled={cancelLoading}
+              >
+                {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
+              </Button>
+            </Box>
+          </Stack>
+        </Modal>
       </Container>
       <Footer />
     </>
