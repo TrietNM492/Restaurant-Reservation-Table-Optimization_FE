@@ -59,6 +59,30 @@ const getDefaultTimes = () => {
   };
 };
 
+const isRoomAvailable = (room) => {
+  if (!room) return false;
+  if (room.roomStatus === 'MAINTENANCE') return false;
+  if (typeof room.isAvailable === 'boolean') {
+    return room.isAvailable;
+  }
+  if (typeof room.available === 'boolean') {
+    return room.available;
+  }
+  // Missing or unverified availability must never default to true
+  return false;
+};
+
+const isRoomRecommended = (room) => {
+  if (!room) return false;
+  if (typeof room.isRecommended === 'boolean') {
+    return room.isRecommended;
+  }
+  if (typeof room.recommended === 'boolean') {
+    return room.recommended;
+  }
+  return false;
+};
+
 function ReservationVipPage() {
   const navigate = useNavigate();
   const defaultTimes = useMemo(() => getDefaultTimes(), []);
@@ -79,21 +103,37 @@ function ReservationVipPage() {
   const [submitError, setSubmitError] = useState('');
   const [confirmedReservation, setConfirmedReservation] = useState(null);
 
-  const fetchVipRooms = useCallback(async () => {
+  const fetchRecommendations = useCallback(async (scheduleValues) => {
     setRoomsLoading(true);
     setRoomsError('');
     try {
-      const data = await roomApi.getVipRooms();
-      const list = Array.isArray(data) ? data : [];
+      const data = await roomReservationApi.getRecommendations({
+        startTime: new Date(scheduleValues.startTime).toISOString(),
+        endTime: new Date(scheduleValues.endTime).toISOString(),
+        partySize: scheduleValues.partySize,
+      });
+      const list = Array.isArray(data?.rooms) ? data.rooms : [];
       setRooms(list);
-      const firstAvailable = list.find((r) => r.roomStatus !== 'MAINTENANCE');
-      if (firstAvailable) {
-        setSelectedRoomId(String(firstAvailable.id));
-      } else if (list.length > 0) {
-        setSelectedRoomId(String(list[0].id));
-      }
+
+      // Strictly preserve user selection if already made and exists in list; never silently switch
+      setSelectedRoomId((prev) => {
+        if (prev && list.some((r) => String(r.id) === String(prev))) {
+          return prev;
+        }
+        if (data?.recommendedRoomId) {
+          return String(data.recommendedRoomId);
+        }
+        const firstAvailable = list.find((r) => isRoomAvailable(r));
+        return firstAvailable ? String(firstAvailable.id) : (list.length > 0 ? String(list[0].id) : '');
+      });
     } catch (err) {
-      setRoomsError(err.message || 'Unable to load VIP suites.');
+      try {
+        const fallbackData = await roomApi.getVipRooms();
+        const list = Array.isArray(fallbackData) ? fallbackData : [];
+        setRooms(list);
+      } catch {
+        setRoomsError(err.message || 'Unable to load VIP suites.');
+      }
     } finally {
       setRoomsLoading(false);
     }
@@ -101,34 +141,21 @@ function ReservationVipPage() {
 
   useEffect(() => {
     let ignore = false;
-    const loadInitialRooms = async () => {
-      try {
-        const data = await roomApi.getVipRooms();
-        if (ignore) return;
-        const list = Array.isArray(data) ? data : [];
-        setRooms(list);
-        const firstAvailable = list.find((r) => r.roomStatus !== 'MAINTENANCE');
-        if (firstAvailable) {
-          setSelectedRoomId(String(firstAvailable.id));
-        } else if (list.length > 0) {
-          setSelectedRoomId(String(list[0].id));
-        }
-      } catch (err) {
-        if (!ignore) {
-          setRoomsError(err.message || 'Unable to load VIP suites.');
-        }
-      } finally {
-        if (!ignore) {
-          setRoomsLoading(false);
-        }
+    const timer = setTimeout(() => {
+      if (!ignore && values.startTime && values.endTime && values.partySize) {
+        fetchRecommendations({
+          startTime: values.startTime,
+          endTime: values.endTime,
+          partySize: values.partySize,
+        });
       }
-    };
+    }, 400);
 
-    loadInitialRooms();
     return () => {
       ignore = true;
+      clearTimeout(timer);
     };
-  }, []);
+  }, [values.startTime, values.endTime, values.partySize, fetchRecommendations]);
 
   const selectedRoom = useMemo(
     () => rooms.find((r) => String(r.id) === String(selectedRoomId)),
@@ -137,10 +164,21 @@ function ReservationVipPage() {
 
   const roomSelectOptions = useMemo(
     () =>
-      rooms.map((r) => ({
-        label: `${r.roomName} (Max ${r.capacity} guests${r.price ? ` - $${r.price}` : ''})${r.roomStatus === 'MAINTENANCE' ? ' [Under Maintenance]' : ''}`,
-        value: String(r.id),
-      })),
+      rooms.map((r) => {
+        const available = isRoomAvailable(r);
+        const recommended = isRoomRecommended(r);
+        const tag = r.roomStatus === 'MAINTENANCE'
+          ? ' [Under Maintenance]'
+          : !available
+          ? (r.unavailabilityReason ? ` [${r.unavailabilityReason}]` : ' [Unavailable]')
+          : recommended
+          ? ' [⭐ Recommended]'
+          : '';
+        return {
+          label: `${r.roomName} (Max ${r.capacity} guests${r.price ? ` - $${r.price}` : ''})${tag}`,
+          value: String(r.id),
+        };
+      }),
     [rooms],
   );
 
@@ -158,13 +196,21 @@ function ReservationVipPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!selectedRoomId) {
+    if (!selectedRoomId || !selectedRoom) {
       setSubmitError('Please select a VIP room for your reservation.');
       return;
     }
 
-    if (selectedRoom?.roomStatus === 'MAINTENANCE') {
+    if (selectedRoom.roomStatus === 'MAINTENANCE') {
       setSubmitError('The selected VIP room is currently under maintenance. Please select another room.');
+      return;
+    }
+
+    if (!isRoomAvailable(selectedRoom)) {
+      setSubmitError(
+        selectedRoom.unavailabilityReason ||
+          'The selected VIP room is unavailable or cannot be verified for the chosen time slot. Please select another room.'
+      );
       return;
     }
 
@@ -397,7 +443,7 @@ function ReservationVipPage() {
                   <Alert
                     severity="error"
                     action={
-                      <Button variant="ghost" size="small" onClick={fetchVipRooms}>
+                      <Button variant="ghost" size="small" onClick={() => fetchRecommendations(values)}>
                         Retry
                       </Button>
                     }
@@ -419,6 +465,9 @@ function ReservationVipPage() {
                     {rooms.map((room) => {
                       const isSelected = String(room.id) === String(selectedRoomId);
                       const isMaintenance = room.roomStatus === 'MAINTENANCE';
+                      const available = isRoomAvailable(room);
+                      const recommended = isRoomRecommended(room);
+                      const isUnavailable = !available;
 
                       return (
                         <Card
@@ -426,20 +475,20 @@ function ReservationVipPage() {
                           variant="outlined"
                           sx={{
                             borderRadius: 3,
-                            borderColor: isSelected ? '#6D28D9' : '#E2E8F0',
-                            borderWidth: isSelected ? 2 : 1,
-                            bgcolor: isSelected ? '#F5F3FF' : '#FFFFFF',
-                            opacity: isMaintenance ? 0.6 : 1,
+                            borderColor: isSelected ? '#6D28D9' : recommended ? '#C4B5FD' : '#E2E8F0',
+                            borderWidth: isSelected ? 2 : recommended ? 1.5 : 1,
+                            bgcolor: isSelected ? '#F5F3FF' : recommended ? '#FAF5FF' : '#FFFFFF',
+                            opacity: isUnavailable ? 0.6 : 1,
                             transition: 'all 0.2s ease',
                             '&:hover': {
-                              borderColor: isMaintenance ? '#E2E8F0' : '#8B5CF6',
-                              boxShadow: isMaintenance ? 'none' : '0 6px 18px rgba(109, 40, 217, 0.08)',
+                              borderColor: isUnavailable ? '#E2E8F0' : '#8B5CF6',
+                              boxShadow: isUnavailable ? 'none' : '0 6px 18px rgba(109, 40, 217, 0.08)',
                             },
                           }}
                         >
                           <CardActionArea
-                            onClick={() => !isMaintenance && handleRoomSelect(room.id)}
-                            disabled={isMaintenance}
+                            onClick={() => !isUnavailable && handleRoomSelect(room.id)}
+                            disabled={isUnavailable}
                             sx={{ p: 2 }}
                           >
                             <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
@@ -455,6 +504,10 @@ function ReservationVipPage() {
                                 <Stack direction="row" spacing={1} alignItems="center">
                                   {isMaintenance ? (
                                     <Chip label="Maintenance" size="small" sx={{ bgcolor: '#FEE2E2', color: '#DC2626', fontWeight: 700, fontSize: 11 }} />
+                                  ) : isUnavailable ? (
+                                    <Chip label={room.isAvailable === false || room.available === false ? 'Reserved' : 'Unavailable'} size="small" sx={{ bgcolor: '#FEE2E2', color: '#DC2626', fontWeight: 700, fontSize: 11 }} />
+                                  ) : recommended ? (
+                                    <Chip label="⭐ Recommended" size="small" sx={{ bgcolor: '#6D28D9', color: '#FFFFFF', fontWeight: 700, fontSize: 11 }} />
                                   ) : isSelected ? (
                                     <Chip label="Selected" size="small" sx={{ bgcolor: '#6D28D9', color: '#FFFFFF', fontWeight: 700, fontSize: 11 }} />
                                   ) : (
@@ -466,6 +519,12 @@ function ReservationVipPage() {
                               {room.description && (
                                 <Typography variant="body2" sx={{ color: '#475569', fontSize: 13, mb: 1.5 }}>
                                   {room.description}
+                                </Typography>
+                              )}
+
+                              {(room.unavailabilityReason || isUnavailable) && (
+                                <Typography variant="caption" sx={{ color: '#DC2626', fontWeight: 600, display: 'block', mb: 1 }}>
+                                  ⚠️ {room.unavailabilityReason || (isMaintenance ? 'Room is currently under maintenance' : 'Room is unavailable for the selected time slot')}
                                 </Typography>
                               )}
 
@@ -579,26 +638,52 @@ function ReservationVipPage() {
                   />
 
                   {/* Room Summary Preview */}
-                  {selectedRoom && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        borderRadius: 2.5,
-                        bgcolor: '#F5F3FF',
-                        border: '1px solid #EDE9FE',
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#6D28D9', display: 'block', mb: 0.5 }}>
-                        SELECTED SUITE SUMMARY
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#1E1B2E' }}>
-                        {selectedRoom.roomName}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#64748B' }}>
-                        Capacity: up to {selectedRoom.capacity} guests {selectedRoom.price ? `• $${selectedRoom.price}` : ''}
-                      </Typography>
-                    </Box>
-                  )}
+                  {selectedRoom && (() => {
+                    const selectedAvailable = isRoomAvailable(selectedRoom);
+                    const selectedRecommended = isRoomRecommended(selectedRoom);
+                    const selectedUnavail = !selectedAvailable;
+
+                    return (
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: 2.5,
+                          bgcolor: selectedUnavail ? '#FEF2F2' : '#F5F3FF',
+                          border: '1px solid',
+                          borderColor: selectedUnavail ? '#FECACA' : '#EDE9FE',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: selectedUnavail ? '#DC2626' : '#6D28D9',
+                            }}
+                          >
+                            SELECTED SUITE SUMMARY
+                          </Typography>
+                          {selectedRecommended && !selectedUnavail && (
+                            <Chip label="⭐ Recommended" size="small" sx={{ bgcolor: '#6D28D9', color: '#FFFFFF', fontWeight: 700, fontSize: 10, height: 20 }} />
+                          )}
+                          {selectedUnavail && (
+                            <Chip label="Unavailable" size="small" sx={{ bgcolor: '#FEE2E2', color: '#DC2626', fontWeight: 700, fontSize: 10, height: 20 }} />
+                          )}
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#1E1B2E' }}>
+                          {selectedRoom.roomName}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>
+                          Capacity: up to {selectedRoom.capacity} guests {selectedRoom.price ? `• $${selectedRoom.price}` : ''}
+                        </Typography>
+                        {(selectedRoom.unavailabilityReason || selectedUnavail) && (
+                          <Typography variant="caption" sx={{ color: '#DC2626', fontWeight: 600, display: 'block', mt: 0.5 }}>
+                            ⚠️ {selectedRoom.unavailabilityReason || (selectedRoom.roomStatus === 'MAINTENANCE' ? 'Room is currently under maintenance' : 'Selected VIP room is unavailable for this time slot')}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })()}
 
                   {submitError && (
                     <Alert severity="error" sx={{ borderRadius: 2 }}>
@@ -610,7 +695,12 @@ function ReservationVipPage() {
                     type="submit"
                     variant="primary"
                     size="large"
-                    disabled={submitting || roomsLoading || !selectedRoomId}
+                    disabled={
+                      submitting ||
+                      roomsLoading ||
+                      !selectedRoomId ||
+                      !isRoomAvailable(selectedRoom)
+                    }
                   >
                     {submitting ? 'Confirming VIP Reservation...' : 'Confirm VIP Reservation'}
                   </Button>

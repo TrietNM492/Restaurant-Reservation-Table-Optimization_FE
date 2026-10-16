@@ -259,6 +259,21 @@ export const roomReservationApi = {
       throw customError;
     }
   },
+
+  getRecommendations: async (params) => {
+    try {
+      const response = await api.get('/room-reservation/recommendation', { params });
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to fetch VIP room recommendations.');
+      const customError = new Error(message, { cause: error });
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
+  },
 };
 
 export const tableApi = {
