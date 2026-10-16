@@ -244,6 +244,23 @@ export const reservationApi = {
   },
 };
 
+export const roomReservationApi = {
+  booking: async (payload) => {
+    try {
+      const response = await api.post('/room-reservation/booking', payload);
+      return unwrapData(response);
+    } catch (error) {
+      const message = extractErrorMessage(error, 'Unable to create VIP room reservation.');
+      const customError = new Error(message, { cause: error });
+      if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+        customError.fieldErrors = error.response.data.message;
+      }
+      customError.response = error?.response;
+      throw customError;
+    }
+  },
+};
+
 export const tableApi = {
   getAll: async () => {
     let currentPage = 0;

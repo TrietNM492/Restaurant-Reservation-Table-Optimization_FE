@@ -29,7 +29,7 @@ import EmptyState from '../components/ui/EmptyState';
 import Loading from '../components/ui/Loading';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
-import { reservationApi, roomApi } from '../api/contracts';
+import { roomApi, roomReservationApi } from '../api/contracts';
 import { ROUTES } from '../routes/routeConstants';
 
 const partySizeOptions = [
@@ -173,7 +173,6 @@ function ReservationVipPage() {
 
     try {
       const payload = {
-        reservationType: 'VIP_ROOM',
         partySize: values.partySize,
         startTime: new Date(values.startTime).toISOString(),
         endTime: new Date(values.endTime).toISOString(),
@@ -181,7 +180,7 @@ function ReservationVipPage() {
         note: values.note.trim(),
       };
 
-      const response = await reservationApi.create(payload);
+      const response = await roomReservationApi.booking(payload);
       setConfirmedReservation({
         ...response,
         roomDetails: selectedRoom,
