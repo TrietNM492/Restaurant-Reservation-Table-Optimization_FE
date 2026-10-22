@@ -2,6 +2,13 @@ import api from './axios';
 import { restaurants } from '../data/restaurants';
 import { useAuthStore } from '../stores/useAuthStore';
 
+/**
+ * Do not add new code into this file
+ * @param payload
+ * @returns {*|(object&{result})}
+ */
+
+
 const unwrapData = (payload) => {
   if (payload && typeof payload === 'object' && 'data' in payload) {
     const { data } = payload;

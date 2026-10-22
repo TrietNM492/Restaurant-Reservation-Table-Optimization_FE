@@ -11,7 +11,7 @@ Tài liệu này mô tả các HTTP endpoint được khai báo trong `src/main/
 - Ký hiệu: **Bắt buộc** theo Bean Validation/controller; **Tùy chọn** có thể bỏ qua/null. Giới hạn ghi kèm khi có annotation validation.
 - Endpoint hỗ trợ Spring `Pageable` nhận query `page` (mặc định thường là `0` theo Spring), `size`, `sort` (ví dụ `sort=id,desc`). Một số endpoint menu tự xử lý `page` từ `1`; được ghi riêng.
 - Thông thường response thành công là HTTP `200`; create thường là `201`; delete có thể trả `204` như ghi dưới đây. Các JSON body thành công (ngoại trừ chuỗi/resource) được bọc:
-
+- Các endpoint backend sẽ được frontend cấu hình trong /services/ và file tương ứng, không gom cụm trong 1 file 
   ```json
   {
     "timestamp": "2026-01-31T10:15:30",

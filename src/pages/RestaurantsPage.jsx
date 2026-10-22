@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
-import { menuApi } from '../api/contracts';
+import { menuApi } from '../services/menuService.js';
 
 function RestaurantsPage() {
   const [searchParams] = useSearchParams();

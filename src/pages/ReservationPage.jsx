@@ -11,7 +11,8 @@ import Loading from '../components/ui/Loading';
 import Select from '../components/ui/Select';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
-import { reservationApi, tableApi } from '../api/contracts';
+import { reservationApi } from '../services/reservationService.js';
+import  { tableApi } from '../services/tableService.js';
 import { ROUTES } from '../routes/routeConstants';
 
 const statusTones = {

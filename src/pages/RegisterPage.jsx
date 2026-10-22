@@ -6,7 +6,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
-import { authApi } from '../api/contracts';
+import { authApi } from '../services/authService.js';
 
 const initialValues = {
   username: '',
