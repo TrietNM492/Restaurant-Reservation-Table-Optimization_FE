@@ -15,6 +15,10 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (config.headers) {
+      const savedLang = typeof window !== 'undefined' ? localStorage.getItem('app_language') : null;
+      config.headers['Accept-Language'] = savedLang || 'vi';
+    }
     return config;
   },
   (error) => Promise.reject(error),
