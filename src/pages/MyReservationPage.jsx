@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Box, Container, Stack, Typography } from '@mui/material';
+import { Alert, Box, Container, Stack, Typography, Tooltip } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 
@@ -29,6 +29,7 @@ import Modal from '../components/ui/Modal';
 import Footer from '../components/layout/Footer';
 import Navbar from '../components/layout/Navbar';
 import { reservationApi } from '../api/contracts';
+import { predictionService } from '../services/predictionService.js';
 import { ROUTES } from '../routes/routeConstants';
 
 const partySizeLabels = {
@@ -46,6 +47,43 @@ const statusTones = {
   COMPLETED: 'success',
   CANCELLED: 'danger',
   NO_SHOW: 'danger',
+};
+
+const waitStatusTones = {
+  SCHEDULED: 'info',
+  READY: 'success',
+  WAITING: 'warning',
+  INDETERMINATE: 'warning',
+  CONFLICT: 'danger',
+  UNAVAILABLE: 'danger',
+  UNASSIGNED: 'neutral',
+  NOT_SUPPORTED: 'neutral',
+  INACTIVE: 'neutral',
+};
+
+const formatWaitStatusBadge = (prediction) => {
+  if (!prediction?.waitStatus) return null;
+  switch (prediction.waitStatus) {
+    case 'WAITING':
+      if (prediction.message && prediction.message.includes('schedule-based estimate')) {
+        return `~${prediction.estimatedWaitMinutes}m wait (Estimated)`;
+      }
+      return `~${prediction.estimatedWaitMinutes}m wait`;
+    case 'READY':
+      return 'Ready for Seating';
+    case 'SCHEDULED':
+      return 'On Time';
+    case 'INDETERMINATE':
+      return 'Check with Host';
+    case 'CONFLICT':
+      return 'Table Conflict';
+    case 'UNAVAILABLE':
+      return 'Table Unavailable';
+    case 'UNASSIGNED':
+      return 'Table Unassigned';
+    default:
+      return null;
+  }
 };
 
 const formatTimeRange = (startIso, endIso) => {
@@ -122,6 +160,7 @@ function MyReservationPage() {
   const flashMessage = location.state?.message;
 
   const [reservations, setReservations] = useState([]);
+  const [waitingTimes, setWaitingTimes] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -130,18 +169,44 @@ function MyReservationPage() {
   const [cancelError, setCancelError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
 
+  const loadWaitingTimes = useCallback(async (items) => {
+    if (!Array.isArray(items)) return;
+    const eligible = items.filter(
+      (r) =>
+        r.reservationType === 'TABLE' &&
+        (r.reservationStatus === 'PENDING' ||
+          r.reservationStatus === 'CONFIRMED' ||
+          r.reservationStatus === 'IN_PROGRESS')
+    );
+    if (eligible.length === 0) return;
+
+    const results = await Promise.allSettled(
+      eligible.map((r) => predictionService.getWaitingTime(r.id))
+    );
+
+    const map = {};
+    results.forEach((res, i) => {
+      if (res.status === 'fulfilled' && res.value) {
+        map[eligible[i].id] = res.value;
+      }
+    });
+    setWaitingTimes((prev) => ({ ...prev, ...map }));
+  }, []);
+
   const fetchReservations = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await reservationApi.listMine();
-      setReservations(sortReservations(data));
+      const sorted = sortReservations(data);
+      setReservations(sorted);
+      loadWaitingTimes(sorted);
     } catch (err) {
       setError(err.message || 'Unable to load reservations.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadWaitingTimes]);
 
   useEffect(() => {
     let ignore = false;
@@ -150,7 +215,9 @@ function MyReservationPage() {
       try {
         const data = await reservationApi.listMine();
         if (!ignore) {
-          setReservations(sortReservations(data));
+          const sorted = sortReservations(data);
+          setReservations(sorted);
+          loadWaitingTimes(sorted);
         }
       } catch (err) {
         if (!ignore) {
@@ -168,7 +235,7 @@ function MyReservationPage() {
     return () => {
       ignore = true;
     };
-  }, [location.key]);
+  }, [location.key, loadWaitingTimes]);
 
   const handleOpenCancelModal = (res) => {
     if (cancelLoading) return;
@@ -281,6 +348,7 @@ function MyReservationPage() {
               const isPending = res.reservationStatus === 'PENDING';
               const canCancel = res.reservationStatus === 'PENDING' || res.reservationStatus === 'CONFIRMED';
               const isVip = res.reservationType === 'VIP_ROOM' || (Array.isArray(res.rooms) && res.rooms.length > 0);
+              const prediction = waitingTimes[res.id];
 
               return (
                 <Card
@@ -349,6 +417,19 @@ function MyReservationPage() {
                         <Badge tone={statusTones[res.reservationStatus] || 'neutral'}>
                           {res.reservationStatus}
                         </Badge>
+                        {prediction && formatWaitStatusBadge(prediction) ? (
+                          <Tooltip
+                            title={prediction.message || 'Estimated waiting time'}
+                            arrow
+                            placement="top"
+                          >
+                            <Box sx={{ display: 'inline-flex' }}>
+                              <Badge tone={waitStatusTones[prediction.waitStatus] || 'neutral'}>
+                                {formatWaitStatusBadge(prediction)}
+                              </Badge>
+                            </Box>
+                          </Tooltip>
+                        ) : null}
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -427,6 +508,58 @@ function MyReservationPage() {
                         </Typography>
                       </Box>
                     </Box>
+
+                    {prediction &&
+                    (prediction.waitStatus === 'WAITING' ||
+                      prediction.waitStatus === 'READY' ||
+                      prediction.waitStatus === 'SCHEDULED' ||
+                      prediction.waitStatus === 'INDETERMINATE') ? (
+                      <Box
+                        sx={{
+                          px: 1.5,
+                          py: 1,
+                          borderRadius: 1.5,
+                          bgcolor: prediction.waitStatus === 'WAITING' ? '#FFFBEB' : '#F8FAFC',
+                          border: '1px solid',
+                          borderColor: prediction.waitStatus === 'WAITING' ? '#FDE68A' : '#E2E8F0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: prediction.waitStatus === 'WAITING' ? '#92400E' : 'text.primary',
+                            }}
+                          >
+                            Waiting Time:
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {prediction.estimatedReadyTime
+                              ? `Estimated ready at ${new Date(prediction.estimatedReadyTime).toLocaleTimeString(undefined, {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}`
+                              : ''}
+                            {prediction.estimatedWaitMinutes > 0
+                              ? ` · ${prediction.estimatedWaitMinutes} min wait`
+                              : ''}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontStyle: 'italic', maxWidth: { xs: '100%', md: '60%' } }}
+                        >
+                          {prediction.message}
+                        </Typography>
+                      </Box>
+                    ) : null}
 
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                       {res.note ? (
@@ -536,4 +669,3 @@ function MyReservationPage() {
 }
 
 export default MyReservationPage;
-
