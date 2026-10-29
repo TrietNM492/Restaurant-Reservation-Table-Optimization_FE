@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+﻿import { Link, useLocation } from 'react-router-dom';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
@@ -27,7 +27,7 @@ const navigationGroups = [
     label: 'Management',
     items: [
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
-      { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },
+      { label: 'Table Analytics', to: ROUTES.DASHBOARD_TABLES, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },
     ],
   },
@@ -78,7 +78,7 @@ function SidebarContent({ onNavigate }) {
         <Box className="app-sidebar__account">
           <span className="app-sidebar__account-mark">G</span>
           <span><strong>The Greenhouse</strong><small>Restaurant admin</small></span>
-          <span className="app-sidebar__account-menu" aria-hidden="true">•••</span>
+          <span className="app-sidebar__account-menu" aria-hidden="true">••••</span>
         </Box>
       </Box>
     </Box>
