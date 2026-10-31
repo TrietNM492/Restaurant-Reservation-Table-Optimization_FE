@@ -257,7 +257,11 @@ export default function TableManagementPage() {
       const payload = response?.data ?? response;
       if (payload && typeof payload === 'object' && 'result' in payload) {
         setRows(Array.isArray(payload.result) ? payload.result : []);
-        setTotal(payload.meta?.total ?? 0);
+        const totalElements =
+          payload.meta?.total ??
+          payload.meta?.totalElements ??
+          (payload.meta?.pages ? payload.meta.pages * PAGE_SIZE : 0);
+        setTotal(Number(totalElements) || 0);
       } else if (Array.isArray(payload)) {
         setRows(payload);
         setTotal(payload.length);

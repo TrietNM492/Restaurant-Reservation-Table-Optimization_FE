@@ -12,6 +12,7 @@ export const ROUTES = {
     DASHBOARD: '/admin/dashboard',
     TABLE_AREAS: '/admin/table-areas',
     TABLES: '/admin/tables',
+    VIP_ROOMS: '/admin/rooms',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
 };

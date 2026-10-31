@@ -4,6 +4,7 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
+import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
@@ -29,6 +30,7 @@ const navigationGroups = [
     items: [
       { label: 'Table Areas', to: ROUTES.TABLE_AREAS, icon: TableRestaurantRoundedIcon },
       { label: 'Tables', to: ROUTES.TABLES, icon: TableBarRoundedIcon },
+      { label: 'VIP Rooms', to: ROUTES.VIP_ROOMS, icon: MeetingRoomRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
       { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },
