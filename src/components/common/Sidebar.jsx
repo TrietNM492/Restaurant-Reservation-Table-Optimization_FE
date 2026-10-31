@@ -26,6 +26,7 @@ const navigationGroups = [
   {
     label: 'Management',
     items: [
+      { label: 'Area Management', to: ROUTES.TABLE_AREAS, icon: TableRestaurantRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
       { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },

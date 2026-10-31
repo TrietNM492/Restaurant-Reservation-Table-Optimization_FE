@@ -1,14 +1,11 @@
-
-
-export const unwrapData = (payload) => {
-    if (payload && typeof payload === 'object' && 'data' in payload) {
-        const { data } = payload;
-        if (data && typeof data === 'object' && 'result' in data && 'meta' in data) {
-            return data.result;
-        }
-
-        return data;
+export const unwrapData = (response) => {
+  // Axios interceptor already returns response.data, but some calls may still return the full response object.
+  // This helper safely extracts the payload while guarding against undefined/null.
+  if (response && typeof response === 'object') {
+    if ('data' in response) {
+      return response.data;
     }
-
-    return payload;
+    return response;
+  }
+  return response;
 };

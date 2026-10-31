@@ -37,12 +37,14 @@ function LoginPage() {
     setError('');
 
     try {
-      await authApi.login({
+      const data = await authApi.login({
         username: values.username.trim(),
         password: values.password,
       });
 
-      navigate('/');
+      // Redirect admin users to admin dashboard, others to home
+      const role = (data?.user?.role ?? '').toUpperCase();
+      navigate(role.includes('ADMIN') ? '/admin/dashboard' : '/');
     } catch (submitError) {
       setError(submitError.message || 'Unable to sign in right now.');
     } finally {
