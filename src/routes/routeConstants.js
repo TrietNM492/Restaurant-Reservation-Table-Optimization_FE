@@ -11,6 +11,7 @@ export const ROUTES = {
     RESERVATION_VIP: '/reservations/vip',
     DASHBOARD: '/admin/dashboard',
     TABLE_AREAS: '/admin/table-areas',
+    TABLES: '/admin/tables',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
 };
