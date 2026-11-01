@@ -12,7 +12,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().accessToken;
-    if (token && config.headers) {
+    if (token && config.headers && !config.skipAuth) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -43,6 +43,7 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       originalRequest &&
+      !originalRequest.skipAuth &&
       !originalRequest._retry &&
       !originalRequest.url?.includes('/auth/login') &&
       !originalRequest.url?.includes('/auth/refresh')

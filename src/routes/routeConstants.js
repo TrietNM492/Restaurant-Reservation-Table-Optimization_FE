@@ -10,6 +10,10 @@ export const ROUTES = {
     RESERVATION_EDIT: '/reservations/:id/edit',
     RESERVATION_VIP: '/reservations/vip',
     DASHBOARD: '/admin/dashboard',
+    MENU_CATEGORIES: '/admin/menu-categories',
+    MENU_ITEMS: '/admin/menu-items',
+    MENUS: '/menus',
+    MENU_DETAIL: '/menus/:id',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
 };

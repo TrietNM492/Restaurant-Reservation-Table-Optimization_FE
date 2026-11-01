@@ -7,6 +7,8 @@ import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
@@ -26,6 +28,8 @@ const navigationGroups = [
   {
     label: 'Management',
     items: [
+      { label: 'Menu categories', to: ROUTES.MENU_CATEGORIES, icon: CategoryRoundedIcon },
+      { label: 'Menu items', to: ROUTES.MENU_ITEMS, icon: RestaurantMenuRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
       { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },
