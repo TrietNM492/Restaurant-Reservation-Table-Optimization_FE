@@ -1,4 +1,4 @@
-﻿export const ROUTES = {
+export const ROUTES = {
     HOME: '/',
     LOGIN: '/login',
     REGISTER: '/register',
@@ -11,6 +11,7 @@
     RESERVATION_VIP: '/reservations/vip',
     DASHBOARD: '/admin/dashboard',
     DASHBOARD_TABLES: '/admin/dashboard/tables',
+    PAYMENT_RETURN: '/payment/vnpay-return',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
 };
