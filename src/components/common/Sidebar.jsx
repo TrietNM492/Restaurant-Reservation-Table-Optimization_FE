@@ -21,7 +21,7 @@ const navigationGroups = [
     items: [
       { label: 'Overview', to: ROUTES.DASHBOARD, icon: DashboardRoundedIcon },
       { label: 'Reservations', to: `${ROUTES.DASHBOARD}#reservations`, icon: CalendarMonthRoundedIcon, count: '12' },
-      { label: 'Floor plan', to: `${ROUTES.DASHBOARD}#floor-plan`, icon: TableRestaurantRoundedIcon },
+      { label: 'Floor plan', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'Waitlist', to: `${ROUTES.DASHBOARD}#waitlist`, icon: HourglassBottomRoundedIcon },
     ],
   },
@@ -30,6 +30,7 @@ const navigationGroups = [
     items: [
       { label: 'Table Areas', to: ROUTES.TABLE_AREAS, icon: TableRestaurantRoundedIcon },
       { label: 'Tables', to: ROUTES.TABLES, icon: TableBarRoundedIcon },
+      { label: 'Status Tracking', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'VIP Rooms', to: ROUTES.VIP_ROOMS, icon: MeetingRoomRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
       { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },

@@ -1,6 +1,7 @@
 import api from "../api/axios.js";
 
 const ADMIN_BASE = "/admin/tables";
+const PUBLIC_BASE = "/tables";
 
 export const TABLE_STATUSES = [
     "AVAILABLE",
@@ -12,7 +13,7 @@ export const TABLE_STATUSES = [
 
 export const adminTableApi = {
     /**
-     * Fetch paginated list of tables with search and filters
+     * Fetch paginated list of tables with search and filters (Admin)
      * @param {object} params - { page, size, q, areaId, statusCode }
      */
     getList: async (params = {}) => {
@@ -72,6 +73,57 @@ export const adminTableApi = {
 
     /** Delete table */
     remove: async (id) => api.delete(`${ADMIN_BASE}/${id}`),
+};
+
+/**
+ * Module: Table Status Tracking [2]
+ * Endpoints for monitoring table status, floor plan, summary stats and quick status updates
+ */
+export const tableTrackingApi = {
+    /**
+     * Fetch paginated table status tracking list
+     * @param {object} params - { page, size, q, areaId, statusCode }
+     */
+    getTables: async (params = {}) => {
+        const { page = 0, size = 10, q = "", areaId = "", statusCode = "" } = params;
+        const query = { page, size };
+        if (q && q.trim()) query.q = q.trim();
+        if (areaId) query.areaId = areaId;
+        if (statusCode) query.statusCode = statusCode;
+        return api.get(PUBLIC_BASE, { params: query });
+    },
+
+    /**
+     * Fetch real-time summary statistics for table statuses
+     * Returns: { totalTables, availableTables, reservedTables, inUseTables, cleaningTables, lockedTables, statusCounts, areaSummaries }
+     */
+    getSummary: async () => api.get(`${PUBLIC_BASE}/summary`),
+
+    /**
+     * Fetch interactive floor plan grouped by area
+     * Returns: AreaFloorPlanResponse[] ({ areaId, areaCode, areaName, areaDescription, tables: TableResponse[] })
+     */
+    getFloorPlan: async () => api.get(`${PUBLIC_BASE}/floor-plan`),
+
+    /**
+     * Fetch tables by specific area
+     * @param {number} areaId
+     */
+    getByArea: async (areaId) => api.get(`${PUBLIC_BASE}/area/${areaId}`),
+
+    /**
+     * Fetch table detail by ID
+     * @param {number} id
+     */
+    getById: async (id) => api.get(`${PUBLIC_BASE}/${id}`),
+
+    /**
+     * Update table status (via Table Status Tracking [2])
+     * @param {number} id
+     * @param {string} statusCode - AVAILABLE | RESERVED | IN_USE | CLEANING | LOCKED
+     */
+    changeStatus: async (id, statusCode) =>
+        api.patch(`${PUBLIC_BASE}/${id}/status`, { id, statusCode }),
 };
 
 export const tableApi = {
