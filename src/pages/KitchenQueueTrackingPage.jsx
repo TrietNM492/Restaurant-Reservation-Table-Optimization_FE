@@ -30,6 +30,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import Button from '../components/ui/Button';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import Modal from '../components/ui/Modal';
 import { kitchenApi } from '../services/kitchenService';
 
@@ -146,6 +147,16 @@ const STATUS_CONFIG = {
     nextAction: null,
     nextStatus: null,
   },
+  REJECTED: {
+    label: 'Rejected',
+    color: '#DC2626',
+    bg: '#FEE2E2',
+    border: '#FECACA',
+    tone: 'danger',
+    icon: PriorityHighRoundedIcon,
+    nextAction: null,
+    nextStatus: null,
+  },
 };
 
 const KANBAN_LANES = [
@@ -165,13 +176,40 @@ const STATUS_TRANSITIONS = {
   ON_HOLD: ['PREPARING', 'CANCELLED'],
 };
 
+const TERMINAL_STATUSES = ['SERVED', 'SERVCED', 'CANCELLED', 'CANCELED', 'REJECTED'];
+
+const formatTimestamp = (value) => {
+  if (!value) return 'Not recorded';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Not recorded' : date.toLocaleString();
+};
+
+const getErrorMessage = (error, fallback) => {
+  const message = error?.response?.data?.message;
+  if (typeof message === 'string' && message.trim()) return message;
+  if (Array.isArray(message)) {
+    return message.map((item) => (typeof item === 'string' ? item : item?.message)).filter(Boolean).join('; ');
+  }
+  if (message && typeof message === 'object') {
+    return Object.entries(message)
+      .map(([field, detail]) => `${field}: ${detail}`)
+      .join('; ');
+  }
+  return error?.response?.data?.error || error?.message || fallback;
+};
+
 // ─── Status Update Modal Component ──────────────────────────────────────────
 
 function OrderStatusModal({ open, order, onClose, onConfirm, loading }) {
+  const currentStatus = order?.status || '';
+  const currentStatusConfig = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.QUEUED;
+  const isTerminal = TERMINAL_STATUSES.includes(currentStatus);
+  const nextStatuses = isTerminal ? [] : STATUS_TRANSITIONS[currentStatus] || [];
   const [targetStatus, setTargetStatus] = useState(
-    () => STATUS_CONFIG[order?.status]?.nextStatus || order?.status || 'PREPARING',
+    () => currentStatusConfig.nextStatus || currentStatus,
   );
   const [note, setNote] = useState(order?.note || '');
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false);
 
   const statusLabels = {
     PREPARING: 'Cooking / Preparing',
@@ -179,72 +217,151 @@ function OrderStatusModal({ open, order, onClose, onConfirm, loading }) {
     SERVED: 'Served to Guest',
     ON_HOLD: 'On Hold',
     CANCELLED: 'Cancel Order',
+    [currentStatus]: `Keep current status (${currentStatusConfig.label})`,
   };
-  const availableStatuses = (STATUS_TRANSITIONS[order?.status] || []).map((status) => ({
+  const availableStatuses = [currentStatus, ...nextStatuses].filter(Boolean).map((status) => ({
     value: status,
-    label: statusLabels[status],
+    label: statusLabels[status] || STATUS_CONFIG[status]?.label || status,
   }));
+  const noteChanged = note !== (order?.note || '');
+  const statusChanged = targetStatus !== currentStatus;
+  const canSubmit = !isTerminal && (statusChanged || noteChanged);
+  const submitUpdate = () => {
+    if (targetStatus === 'CANCELLED' && statusChanged) {
+      setConfirmCancelOpen(true);
+      return;
+    }
+    onConfirm(order.kitchenOrderId, targetStatus, note);
+  };
 
   return (
-    <Modal open={open} onClose={onClose} title="Update Kitchen Order Status" size="small">
-      <Stack spacing={2} sx={{ pt: 1 }}>
-        <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-            Order #{order?.orderNo || order?.orderId}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {order?.tableOrRoomInfo} • {order?.customerName}
-          </Typography>
-        </Box>
+    <>
+      <Modal open={open} onClose={onClose} title="Update Kitchen Order Status" size="small">
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          <Box sx={{ p: 1.5, bgcolor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                  Order #{order?.orderNo || order?.orderId}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {order?.tableOrRoomInfo || 'Dine-in'} • {order?.customerName || 'Walk-in Guest'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {order?.kitchenStation || 'Kitchen station not assigned'}
+                </Typography>
+              </Box>
+              <Chip
+                label={currentStatusConfig.label}
+                size="small"
+                sx={{
+                  bgcolor: currentStatusConfig.bg,
+                  color: currentStatusConfig.color,
+                  border: `1px solid ${currentStatusConfig.border}`,
+                  fontWeight: 700,
+                }}
+              />
+            </Stack>
+          </Box>
 
-        <TextField
-          select
-          label="New Status *"
-          size="small"
-          value={targetStatus}
-          onChange={(e) => setTargetStatus(e.target.value)}
-          fullWidth
-          sx={{
-            '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' },
-          }}
-        >
-          {availableStatuses.map((s) => (
-            <MenuItem key={s.value} value={s.value}>
-              {s.label}
-            </MenuItem>
-          ))}
-        </TextField>
+          <Box sx={{ p: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 800, color: '#475569', mb: 1 }}>
+              ORDER TIMELINE
+            </Typography>
+            <Stack spacing={0.75}>
+              <Typography variant="caption" color="text.secondary">
+                Received: {formatTimestamp(order?.orderTime)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Started: {formatTimestamp(order?.actualStartTime)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Ready: {formatTimestamp(order?.actualReadyTime)}
+                {order?.estimatedReadyTime ? ` (estimated ${formatTimestamp(order.estimatedReadyTime)})` : ''}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Served: {formatTimestamp(order?.actualServedTime)}
+              </Typography>
+            </Stack>
+          </Box>
 
-        <TextField
-          label="Chef Note (Optional)"
-          size="small"
-          multiline
-          rows={2}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="e.g. Less spicy, Allergy note noted..."
-          fullWidth
-          sx={{
-            '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' },
-          }}
-        />
-
-        <Divider sx={{ my: 1 }} />
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => onConfirm(order.kitchenOrderId, targetStatus, note)}
-            disabled={loading}
+          <TextField
+            select
+            label="Kitchen Status"
+            size="small"
+            value={targetStatus}
+            onChange={(e) => setTargetStatus(e.target.value)}
+            fullWidth
+            disabled={isTerminal || loading}
+            sx={{
+              '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' },
+            }}
           >
-            {loading ? 'Updating…' : 'Update Status'}
-          </Button>
-        </Box>
-      </Stack>
-    </Modal>
+            {availableStatuses.map((s) => (
+              <MenuItem key={s.value} value={s.value}>
+                {s.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            label="Chef Note (Optional)"
+            size="small"
+            multiline
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Add preparation instructions or an update for the service team"
+            helperText={`${note.length}/500 characters`}
+            inputProps={{ maxLength: 500 }}
+            fullWidth
+            disabled={isTerminal || loading}
+            sx={{
+              '& .MuiOutlinedInput-root': { borderRadius: '12px', bgcolor: '#fff' },
+            }}
+          />
+
+          {isTerminal && (
+            <Alert severity="info" sx={{ borderRadius: '12px' }}>
+              This order is in a final status and can no longer be updated.
+            </Alert>
+          )}
+
+          {targetStatus === 'CANCELLED' && statusChanged && (
+            <Alert severity="warning" sx={{ borderRadius: '12px' }}>
+              Cancelling this kitchen order is a final action.
+            </Alert>
+          )}
+
+          <Divider sx={{ my: 1 }} />
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+            <Button variant="secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={submitUpdate}
+              disabled={loading || !canSubmit}
+            >
+              {loading ? 'Updating…' : statusChanged ? 'Save Update' : 'Save Note'}
+            </Button>
+          </Box>
+        </Stack>
+      </Modal>
+      <ConfirmDialog
+        open={confirmCancelOpen}
+        title="Cancel kitchen order?"
+        confirmLabel="Cancel Order"
+        onCancel={() => setConfirmCancelOpen(false)}
+        onConfirm={() => {
+          setConfirmCancelOpen(false);
+          onConfirm(order.kitchenOrderId, targetStatus, note);
+        }}
+      >
+        This action is final. The order will be marked as cancelled and cannot be updated again.
+      </ConfirmDialog>
+    </>
   );
 }
 
@@ -256,6 +373,7 @@ function KitchenOrderCard({ order, onOpenStatusModal, onQuickAdvance, actionLoad
   const isOverdue = order.waitingMinutes > (order.estimatedPrepTimeMinutes || 30);
   const isActionLoading = actionLoadingId === order.kitchenOrderId;
   const priorityLabel = order.priorityLabel || (order.priority >= 3 ? 'VIP_URGENT' : order.priority === 2 ? 'HIGH' : 'NORMAL');
+  const isTerminal = TERMINAL_STATUSES.includes(order.status);
 
   return (
     <Card
@@ -404,14 +522,16 @@ function KitchenOrderCard({ order, onOpenStatusModal, onQuickAdvance, actionLoad
 
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 1, pt: 0.5 }}>
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={() => onOpenStatusModal(order)}
-            sx={{ flex: 1 }}
-          >
-            Update
-          </Button>
+          {!isTerminal && (
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => onOpenStatusModal(order)}
+              sx={{ flex: 1 }}
+            >
+              Update
+            </Button>
+          )}
 
           {config.nextAction && (
             <Button
@@ -488,7 +608,7 @@ export default function KitchenQueueTrackingPage() {
       }
     } catch (err) {
       if (requestId === ordersRequestId.current) {
-        setErrorMsg(err.message || 'Failed to load kitchen queue orders.');
+        setErrorMsg(getErrorMessage(err, 'Failed to load kitchen queue orders.'));
       }
     } finally {
       if (requestId === ordersRequestId.current) {
@@ -556,7 +676,7 @@ export default function KitchenQueueTrackingPage() {
         loadOrders(search, filterVip, selectedStatusTab),
       ]);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Failed to update order status');
+      setErrorMsg(getErrorMessage(err, 'Failed to update order status'));
     } finally {
       setActionLoadingId(null);
     }
@@ -565,14 +685,17 @@ export default function KitchenQueueTrackingPage() {
   const handleModalStatusConfirm = async (kitchenOrderId, newStatus, note) => {
     setModalLoading(true);
     try {
-      await kitchenApi.updateOrderStatus(kitchenOrderId, { status: newStatus, note });
+      await kitchenApi.updateOrderStatus(kitchenOrderId, {
+        status: newStatus,
+        note: note.trim(),
+      });
       setStatusModalOrder(null);
       await Promise.all([
         loadDashboard(),
         loadOrders(search, filterVip, selectedStatusTab),
       ]);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.message || 'Failed to update order status');
+      setErrorMsg(getErrorMessage(err, 'Failed to update order status'));
     } finally {
       setModalLoading(false);
     }
