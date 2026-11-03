@@ -875,6 +875,7 @@ export default function TableStatusTrackingPage() {
               rows={tablesList}
               getRowKey={(row) => row.id}
               emptyMessage="No tables found."
+              maxHeight="none"
             />
           )}
 
@@ -903,4 +904,3 @@ export default function TableStatusTrackingPage() {
     </Box>
   );
 }
-

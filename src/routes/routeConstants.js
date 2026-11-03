@@ -13,6 +13,7 @@ export const ROUTES = {
     TABLE_AREAS: '/admin/table-areas',
     TABLES: '/admin/tables',
     TABLE_TRACKING: '/admin/table-tracking',
+    KITCHEN_QUEUE: '/admin/kitchen-queue',
     VIP_ROOMS: '/admin/rooms',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',

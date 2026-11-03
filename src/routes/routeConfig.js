@@ -18,6 +18,7 @@ const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
 const TableAreaManagementPage = lazy(() => import('../pages/TableAreaManagementPage'));
 const TableManagementPage = lazy(() => import('../pages/TableManagementPage'));
 const TableStatusTrackingPage = lazy(() => import('../pages/TableStatusTrackingPage'));
+const KitchenQueueTrackingPage = lazy(() => import('../pages/KitchenQueueTrackingPage'));
 const VipRoomManagementPage = lazy(() => import('../pages/VipRoomManagementPage'));
 const PageTemp = lazy(() => import('../pages/PageTemp'));
 const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
@@ -97,6 +98,10 @@ export const routeConfig = [
             {
                 path: ROUTES.TABLE_TRACKING,
                 element: createElement(TableStatusTrackingPage),
+            },
+            {
+                path: ROUTES.KITCHEN_QUEUE,
+                element: createElement(KitchenQueueTrackingPage),
             },
             {
                 path: ROUTES.VIP_ROOMS,

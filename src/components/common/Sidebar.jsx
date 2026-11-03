@@ -6,6 +6,7 @@ import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRound
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
@@ -23,6 +24,7 @@ const navigationGroups = [
       { label: 'Reservations', to: `${ROUTES.DASHBOARD}#reservations`, icon: CalendarMonthRoundedIcon, count: '12' },
       { label: 'Floor plan', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'Waitlist', to: `${ROUTES.DASHBOARD}#waitlist`, icon: HourglassBottomRoundedIcon },
+      { label: 'Kitchen Queue', to: ROUTES.KITCHEN_QUEUE, icon: RestaurantRoundedIcon },
     ],
   },
   {

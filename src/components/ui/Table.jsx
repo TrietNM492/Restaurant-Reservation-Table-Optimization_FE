@@ -6,9 +6,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 
-export default function Table({ columns, rows, getRowKey, className = '', emptyMessage = 'No records found', ...props }) {
+export default function Table({ columns, rows, getRowKey, className = '', emptyMessage = 'No records found', maxHeight = 440, ...props }) {
   return (
-    <TableContainer className={`ui-table-wrap ${className}`.trim()} component={Paper} elevation={0} sx={{ maxHeight: 440, borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+    <TableContainer className={`ui-table-wrap ${className}`.trim()} component={Paper} elevation={0} sx={{ maxHeight, borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
       <MuiTable className="ui-table" stickyHeader size="small" {...props} sx={{
         '& .MuiTableCell-root': { px: '14px', py: '12px', borderBottomColor: '#F1E8FF', color: '#475569', fontSize: 12, whiteSpace: 'nowrap' },
         '& .MuiTableHead-root .MuiTableCell-root': { bgcolor: '#F8FAFC', color: '#475569', fontSize: 10, fontWeight: 700, letterSpacing: '.075em', textTransform: 'uppercase', borderBottomColor: '#E2E8F0' },
