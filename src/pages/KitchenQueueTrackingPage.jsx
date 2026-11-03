@@ -555,6 +555,7 @@ function KitchenOrderCard({ order, onOpenStatusModal, onQuickAdvance, actionLoad
 export default function KitchenQueueTrackingPage() {
   const [orders, setOrders] = useState([]);
   const [dashboard, setDashboard] = useState(null);
+  const [dashboardError, setDashboardError] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -577,12 +578,15 @@ export default function KitchenQueueTrackingPage() {
   // ─── Load Dashboard Stats ─────────────────────────────────────────────────
 
   const loadDashboard = useCallback(async () => {
+    setDashboardError('');
     try {
       const res = await kitchenApi.getDashboard();
-      const payload = res?.data ?? res;
-      setDashboard(payload);
-    } catch {
-      // Non-blocking
+      if (!res || typeof res !== 'object') {
+        throw new Error('Invalid kitchen dashboard response.');
+      }
+      setDashboard(res);
+    } catch (err) {
+      setDashboardError(getErrorMessage(err, 'Failed to load kitchen monitoring data.'));
     }
   }, []);
 
@@ -706,6 +710,58 @@ export default function KitchenQueueTrackingPage() {
   const getOrdersForLane = (statuses) => {
     return orders.filter((o) => statuses.includes(o.status));
   };
+  const utilizationValue = Number(dashboard?.kitchenUtilizationPercent);
+  const utilization = Number.isFinite(utilizationValue)
+    ? Math.max(0, Math.min(100, utilizationValue))
+    : 0;
+  const averagePrepMinutes = dashboard?.averagePrepTimeMinutes;
+  const statusBreakdown = Object.entries(dashboard?.orderCountByStatus || {})
+    .filter(([, count]) => Number(count) > 0)
+    .sort((a, b) => Number(b[1]) - Number(a[1]));
+  const metrics = [
+    {
+      label: 'Waiting in queue',
+      value: dashboard?.pendingOrdersCount,
+      hint: 'Awaiting preparation',
+      icon: TimerRoundedIcon,
+      color: '#6D28D9',
+      background: '#F5F3FF',
+    },
+    {
+      label: 'Being prepared',
+      value: dashboard?.preparingOrdersCount,
+      hint: 'Currently on the line',
+      icon: LocalFireDepartmentRoundedIcon,
+      color: '#D97706',
+      background: '#FFFBEB',
+    },
+    {
+      label: 'Ready to serve',
+      value: dashboard?.readyOrdersCount,
+      hint: 'Awaiting service pickup',
+      icon: CheckCircleRoundedIcon,
+      color: '#16A34A',
+      background: '#F0FDF4',
+    },
+    {
+      label: 'Active kitchen orders',
+      value: dashboard?.totalActiveOrdersCount,
+      hint: 'Across active stages',
+      icon: FastfoodRoundedIcon,
+      color: '#2563EB',
+      background: '#EFF6FF',
+    },
+    {
+      label: 'Average prep time',
+      value: typeof averagePrepMinutes === 'number' && Number.isFinite(averagePrepMinutes)
+        ? `${averagePrepMinutes.toFixed(1)} min`
+        : '—',
+      hint: 'Start to ready, completed orders',
+      icon: AccessTimeRoundedIcon,
+      color: '#0F766E',
+      background: '#F0FDFA',
+    },
+  ];
 
   return (
     <Box>
@@ -736,81 +792,162 @@ export default function KitchenQueueTrackingPage() {
         </Stack>
       </Box>
 
-      {/* ── KPI Load Monitoring Metrics (FR-030) ── */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {/* Pending Orders */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
-              Pending In Queue
+      {/* ── Kitchen Load Monitoring (FR-030) ── */}
+      <Card
+        elevation={0}
+        sx={{
+          mb: 3,
+          p: { xs: 2, md: 2.5 },
+          borderRadius: '20px',
+          border: '1px solid #E2E8F0',
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8FF 100%)',
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, mb: 2.5 }}>
+          <Box>
+            <Typography variant="h6" sx={{ color: '#1E1B2E', fontWeight: 800 }}>
+              Kitchen Load Monitoring
             </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#6D28D9', mt: 0.5 }}>
-              {dashboard?.pendingOrdersCount ?? 0}
+            <Typography variant="body2" color="text.secondary">
+              Live workload, preparation speed, and order distribution by status.
             </Typography>
-            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-              Awaiting preparation
-            </Typography>
-          </Card>
+          </Box>
+          <Chip
+            size="small"
+            label="Updates every 20 sec"
+            sx={{ bgcolor: '#F5F3FF', color: '#6D28D9', fontWeight: 700 }}
+          />
+        </Box>
+
+        {dashboardError && (
+          <Alert severity={dashboard ? 'warning' : 'error'} sx={{ mb: 2, borderRadius: '12px' }}>
+            {dashboardError}
+          </Alert>
+        )}
+
+        <Grid container spacing={1.5}>
+          {metrics.map(({ label, value, hint, icon: Icon, color, background }) => (
+            <Grid item xs={12} sm={6} md={4} lg={2.4} key={label}>
+              <Card
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  p: 2,
+                  borderRadius: '16px',
+                  border: '1px solid #E9E7F0',
+                  bgcolor: '#FFFFFF',
+                  transition: 'transform .18s ease, box-shadow .18s ease',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 10px 24px rgba(30,27,46,.07)' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>
+                    {label}
+                  </Typography>
+                  <Box sx={{ width: 36, height: 36, borderRadius: '12px', bgcolor: background, color, display: 'grid', placeItems: 'center' }}>
+                    <Icon sx={{ fontSize: 19 }} />
+                  </Box>
+                </Box>
+                <Typography variant="h4" sx={{ color: '#1E1B2E', fontWeight: 800, lineHeight: 1.1 }}>
+                  {dashboard ? (value ?? 0) : '—'}
+                </Typography>
+                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#94A3B8' }}>
+                  {hint}
+                </Typography>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
 
-        {/* Cooking / Preparing */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2, borderRadius: '16px', border: '1px solid #FDE68A', bgcolor: '#FFFDF5' }}>
-            <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700 }}>
-              Cooking / In Progress
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#D97706', mt: 0.5 }}>
-              {dashboard?.preparingOrdersCount ?? 0}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#B45309' }}>
-              Currently on the line
-            </Typography>
-          </Card>
-        </Grid>
-
-        {/* Ready to Serve */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2, borderRadius: '16px', border: '1px solid #BBF7D0', bgcolor: '#F0FDF4' }}>
-            <Typography variant="caption" sx={{ color: '#16A34A', fontWeight: 700 }}>
-              Ready for Pickup
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A', mt: 0.5 }}>
-              {dashboard?.readyOrdersCount ?? 0}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#15803D' }}>
-              Dishes plated &amp; hot
-            </Typography>
-          </Card>
-        </Grid>
-
-        {/* Kitchen Utilization % */}
-        <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
-                Kitchen Load
+        <Grid container spacing={1.5} sx={{ mt: 0.25 }}>
+          <Grid item xs={12} md={5}>
+            <Paper
+              elevation={0}
+              sx={{ height: '100%', p: 2, border: '1px solid #E9E7F0', borderRadius: '16px', bgcolor: '#FFFFFF' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, mb: 1.5 }}>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E1B2E' }}>
+                    Kitchen utilization
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Current active cooking capacity
+                  </Typography>
+                </Box>
+                <SpeedRoundedIcon sx={{ color: utilization > 80 ? '#DC2626' : '#6D28D9' }} />
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75 }}>
+                <Typography variant="h3" sx={{ fontWeight: 800, color: utilization > 80 ? '#DC2626' : '#6D28D9' }}>
+                  {dashboard ? `${Math.round(utilization)}%` : '—'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">of kitchen capacity</Typography>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={dashboard ? utilization : 0}
+                aria-label="Kitchen utilization"
+                sx={{
+                  mt: 1.5,
+                  height: 10,
+                  borderRadius: 5,
+                  bgcolor: '#F1F5F9',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 5,
+                    bgcolor: utilization > 80 ? '#DC2626' : utilization > 60 ? '#D97706' : '#6D28D9',
+                  },
+                }}
+              />
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#64748B' }}>
+                {utilization > 80 ? 'High load — monitor incoming orders.' : utilization > 60 ? 'Moderate load — kitchen is busy.' : 'Capacity available for incoming orders.'}
               </Typography>
-              <SpeedRoundedIcon sx={{ fontSize: 18, color: '#6D28D9' }} />
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: '#1E1B2E', mt: 0.5 }}>
-              {Math.round(dashboard?.kitchenUtilizationPercent ?? 0)}%
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={Math.min(100, dashboard?.kitchenUtilizationPercent ?? 0)}
-              sx={{
-                mt: 1,
-                height: 6,
-                borderRadius: 3,
-                bgcolor: '#F1F5F9',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: (dashboard?.kitchenUtilizationPercent ?? 0) > 80 ? '#DC2626' : '#6D28D9',
-                },
-              }}
-            />
-          </Card>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={7}>
+            <Paper
+              elevation={0}
+              sx={{ height: '100%', p: 2, border: '1px solid #E9E7F0', borderRadius: '16px', bgcolor: '#FFFFFF' }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E1B2E' }}>
+                    Orders by status
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Current distribution across kitchen tickets
+                  </Typography>
+                </Box>
+                <Chip size="small" label={`${dashboard?.totalActiveOrdersCount ?? 0} active`} sx={{ bgcolor: '#EFF6FF', color: '#2563EB', fontWeight: 700 }} />
+              </Box>
+              {statusBreakdown.length > 0 ? (
+                <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1}>
+                  {statusBreakdown.map(([status, count]) => {
+                    const config = STATUS_CONFIG[status] || STATUS_CONFIG.QUEUED;
+                    return (
+                      <Chip
+                        key={status}
+                        label={`${config.label}: ${count}`}
+                        size="small"
+                        sx={{
+                          height: 30,
+                          bgcolor: config.bg,
+                          color: config.color,
+                          border: `1px solid ${config.border}`,
+                          fontWeight: 700,
+                        }}
+                      />
+                    );
+                  })}
+                </Stack>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
+                  {dashboard ? 'No kitchen tickets recorded yet.' : 'Status breakdown will appear when monitoring data loads.'}
+                </Typography>
+              )}
+            </Paper>
+          </Grid>
         </Grid>
-      </Grid>
+      </Card>
 
       {/* ── Toolbar: Search & Filter Tabs ── */}
       <Box

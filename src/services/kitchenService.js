@@ -61,5 +61,8 @@ export const kitchenApi = {
    * Fetch kitchen load monitoring dashboard stats (FR-030)
    * Returns: { pendingOrdersCount, preparingOrdersCount, readyOrdersCount, totalActiveOrdersCount, averagePrepTimeMinutes, kitchenUtilizationPercent, orderCountByStatus }
    */
-  getDashboard: async () => api.get(`${BASE_URL}/dashboard`),
+  getDashboard: async () => {
+    const response = await api.get(`${BASE_URL}/dashboard`);
+    return response?.data ?? response;
+  },
 };
