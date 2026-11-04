@@ -4,8 +4,11 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import HourglassBottomRoundedIcon from '@mui/icons-material/HourglassBottomRounded';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
+import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
 import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
@@ -21,13 +24,18 @@ const navigationGroups = [
     items: [
       { label: 'Overview', to: ROUTES.DASHBOARD, icon: DashboardRoundedIcon },
       { label: 'Reservations', to: `${ROUTES.DASHBOARD}#reservations`, icon: CalendarMonthRoundedIcon, count: '12' },
-      { label: 'Floor plan', to: `${ROUTES.DASHBOARD}#floor-plan`, icon: TableRestaurantRoundedIcon },
+      { label: 'Floor plan', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'Waitlist', to: `${ROUTES.DASHBOARD}#waitlist`, icon: HourglassBottomRoundedIcon },
+      { label: 'Kitchen Queue', to: ROUTES.KITCHEN_QUEUE, icon: RestaurantRoundedIcon },
     ],
   },
   {
     label: 'Management',
     items: [
+      { label: 'Table Areas', to: ROUTES.TABLE_AREAS, icon: TableRestaurantRoundedIcon },
+      { label: 'Tables', to: ROUTES.TABLES, icon: TableBarRoundedIcon },
+      { label: 'Status Tracking', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
+      { label: 'VIP Rooms', to: ROUTES.VIP_ROOMS, icon: MeetingRoomRoundedIcon },
       { label: 'Menu categories', to: ROUTES.MENU_CATEGORIES, icon: CategoryRoundedIcon },
       { label: 'Menu items', to: ROUTES.MENU_ITEMS, icon: RestaurantMenuRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },

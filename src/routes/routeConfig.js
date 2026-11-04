@@ -16,6 +16,11 @@ const ReservationPage = lazy(() => import('../pages/ReservationPage'));
 const ReservationVipPage = lazy(() => import('../pages/ReservationVipPage'));
 const MyReservationPage = lazy(() => import('../pages/MyReservationPage'));
 const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const TableAreaManagementPage = lazy(() => import('../pages/TableAreaManagementPage'));
+const TableManagementPage = lazy(() => import('../pages/TableManagementPage'));
+const TableStatusTrackingPage = lazy(() => import('../pages/TableStatusTrackingPage'));
+const KitchenQueueTrackingPage = lazy(() => import('../pages/KitchenQueueTrackingPage'));
+const VipRoomManagementPage = lazy(() => import('../pages/VipRoomManagementPage'));
 const PaymentReturnPage = lazy(() => import('../pages/PaymentReturnPage'));
 const PageTemp = lazy(() => import('../pages/PageTemp'));
 const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
@@ -93,6 +98,24 @@ export const routeConfig = [
                 element: createElement(DashboardPage),
             },
             {
+                path: ROUTES.TABLE_AREAS,
+                element: createElement(TableAreaManagementPage),
+            },
+            {
+                path: ROUTES.TABLES,
+                element: createElement(TableManagementPage),
+            },
+            {
+                path: ROUTES.TABLE_TRACKING,
+                element: createElement(TableStatusTrackingPage),
+            },
+            {
+                path: ROUTES.KITCHEN_QUEUE,
+                element: createElement(KitchenQueueTrackingPage),
+            },
+            {
+                path: ROUTES.VIP_ROOMS,
+                element: createElement(VipRoomManagementPage),
                 path: ROUTES.DASHBOARD_TABLES,
                 element: createElement(DashboardPage),
             },

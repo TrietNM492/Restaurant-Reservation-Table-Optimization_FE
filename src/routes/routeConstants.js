@@ -10,6 +10,13 @@ export const ROUTES = {
     RESERVATION_EDIT: '/reservations/:id/edit',
     RESERVATION_VIP: '/reservations/vip',
     DASHBOARD: '/admin/dashboard',
+    TABLE_AREAS: '/admin/table-areas',
+    TABLES: '/admin/tables',
+    TABLE_TRACKING: '/admin/table-tracking',
+    KITCHEN_QUEUE: '/admin/kitchen-queue',
+    VIP_ROOMS: '/admin/rooms',
+    PAGE_TEMP: '/page-temp',
+    NOT_FOUND: '*',
     DASHBOARD_TABLES: '/admin/dashboard/tables',
     PAYMENT_RETURN: '/payment/vnpay-return',
     PAGE_TEMP: '/page-temp',
@@ -20,4 +27,4 @@ export const ROUTES = {
     MENU_DETAIL: '/menus/:id',
 };
 
-    
+
