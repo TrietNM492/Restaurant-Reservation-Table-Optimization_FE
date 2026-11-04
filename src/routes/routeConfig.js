@@ -116,6 +116,8 @@ export const routeConfig = [
             {
                 path: ROUTES.VIP_ROOMS,
                 element: createElement(VipRoomManagementPage),
+            },
+            {
                 path: ROUTES.DASHBOARD_TABLES,
                 element: createElement(DashboardPage),
             },
