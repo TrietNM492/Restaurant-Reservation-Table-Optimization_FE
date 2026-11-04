@@ -13,5 +13,10 @@
     DASHBOARD_TABLES: '/admin/dashboard/tables',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
+    MENU_CATEGORIES: '/admin/menu-categories',
+    MENU_ITEMS: '/admin/menu-items',
+    MENUS: '/menus',
+    MENU_DETAIL: '/menus/:id',
 };
 
+    
