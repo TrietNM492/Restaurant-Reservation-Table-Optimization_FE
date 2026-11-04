@@ -1,4 +1,4 @@
-﻿import { createElement, lazy } from 'react';
+import { createElement, lazy } from 'react';
 
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
@@ -16,6 +16,7 @@ const ReservationPage = lazy(() => import('../pages/ReservationPage'));
 const ReservationVipPage = lazy(() => import('../pages/ReservationVipPage'));
 const MyReservationPage = lazy(() => import('../pages/MyReservationPage'));
 const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const PaymentReturnPage = lazy(() => import('../pages/PaymentReturnPage'));
 const PageTemp = lazy(() => import('../pages/PageTemp'));
 const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
 const MenuManagementPage = lazy(() => import('../pages/MenuManagementPage'));
@@ -50,6 +51,10 @@ export const routeConfig = [
             {
                 path: ROUTES.RESTAURANT_DETAIL,
                 element: createElement(RestaurantDetailPage),
+            },
+            {
+                path: ROUTES.PAYMENT_RETURN,
+                element: createElement(PaymentReturnPage),
             },
         ],
     },
