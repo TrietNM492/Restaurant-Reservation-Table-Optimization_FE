@@ -1,4 +1,4 @@
-import { createElement, lazy } from 'react';
+﻿import { createElement, lazy } from 'react';
 
 import AuthLayout from '../layouts/AuthLayout';
 import AdminLayout from '../layouts/AdminLayout';
@@ -44,12 +44,12 @@ export const routeConfig = [
                 element: createElement(RestaurantsPage),
             },
             {
-                path: ROUTES.RESTAURANT_DETAIL,
-                element: createElement(RestaurantDetailPage),
-            },
-            {
                 path: ROUTES.RESERVATION_NEW,
                 element: createElement(ReservationPage),
+            },
+            {
+                path: ROUTES.RESTAURANT_DETAIL,
+                element: createElement(RestaurantDetailPage),
             },
         ],
     },
@@ -85,6 +85,10 @@ export const routeConfig = [
         children: [
             {
                 path: ROUTES.DASHBOARD,
+                element: createElement(DashboardPage),
+            },
+            {
+                path: ROUTES.DASHBOARD_TABLES,
                 element: createElement(DashboardPage),
             },
         ],
