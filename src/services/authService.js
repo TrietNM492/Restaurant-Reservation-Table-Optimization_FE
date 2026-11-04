@@ -1,6 +1,9 @@
 import api from "../api/axios.js";
 import { useAuthStore } from "../stores/useAuthStore.js";
 import { unwrapData } from "../utils/unwrapData.js";
+import {useAuthStore} from "../stores/useAuthStore.js";
+
+
 
 export const authApi = {
     register: async (payload) => {

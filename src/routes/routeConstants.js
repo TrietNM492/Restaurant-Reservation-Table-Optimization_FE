@@ -17,4 +17,14 @@ export const ROUTES = {
     VIP_ROOMS: '/admin/rooms',
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
+    DASHBOARD_TABLES: '/admin/dashboard/tables',
+    PAYMENT_RETURN: '/payment/vnpay-return',
+    PAGE_TEMP: '/page-temp',
+    NOT_FOUND: '*',
+    MENU_CATEGORIES: '/admin/menu-categories',
+    MENU_ITEMS: '/admin/menu-items',
+    MENUS: '/menus',
+    MENU_DETAIL: '/menus/:id',
 };
+
+

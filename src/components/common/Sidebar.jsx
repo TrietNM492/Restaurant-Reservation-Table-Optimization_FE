@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+﻿import { Link, useLocation } from 'react-router-dom';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
@@ -10,6 +10,8 @@ import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
@@ -34,8 +36,10 @@ const navigationGroups = [
       { label: 'Tables', to: ROUTES.TABLES, icon: TableBarRoundedIcon },
       { label: 'Status Tracking', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'VIP Rooms', to: ROUTES.VIP_ROOMS, icon: MeetingRoomRoundedIcon },
+      { label: 'Menu categories', to: ROUTES.MENU_CATEGORIES, icon: CategoryRoundedIcon },
+      { label: 'Menu items', to: ROUTES.MENU_ITEMS, icon: RestaurantMenuRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
-      { label: 'Analytics', to: `${ROUTES.DASHBOARD}#analytics`, icon: InsightsRoundedIcon },
+      { label: 'Table Analytics', to: ROUTES.DASHBOARD_TABLES, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },
     ],
   },
@@ -86,7 +90,7 @@ function SidebarContent({ onNavigate }) {
         <Box className="app-sidebar__account">
           <span className="app-sidebar__account-mark">G</span>
           <span><strong>The Greenhouse</strong><small>Restaurant admin</small></span>
-          <span className="app-sidebar__account-menu" aria-hidden="true">•••</span>
+          <span className="app-sidebar__account-menu" aria-hidden="true">••••</span>
         </Box>
       </Box>
     </Box>

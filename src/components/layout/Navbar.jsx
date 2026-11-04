@@ -23,6 +23,7 @@ import { useAuthStore } from '../../stores/useAuthStore';
 
 const navItems = [
   { label: 'Home', href: '/' },
+  { label: 'Menu', href: '/menus' },
   { label: 'Explore Restaurants', href: '/restaurants' },
   { label: 'Book VIP Suite', href: '/reservations/vip' },
   { label: 'How It Works', href: '/#how-it-works' },
@@ -32,7 +33,7 @@ const navItems = [
 function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const allNavItems = useMemo(() => {
     if (isAuthenticated) {
@@ -41,11 +42,12 @@ function Navbar() {
       }
       return [
         ...navItems,
+        ...(user?.role === 'ROLE_ADMIN' ? [{ label: 'Manage menu', href: '/admin/menu-items' }] : []),
         { label: 'My Reservations', href: '/reservations/me' },
       ];
     }
     return navItems;
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user?.role]);
 
   const handleNav = (path) => {
     if (path.startsWith('/#')) {
@@ -103,21 +105,23 @@ function Navbar() {
             >
               <RestaurantIcon fontSize="small" />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.04em' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
               Intelligent Restaurant
             </Typography>
           </Box>
 
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2.5, mx: 'auto' }}>
+          <Box sx={{ display: { xs: 'none', xl: 'flex' }, alignItems: 'center', gap: 0.5, mx: 'auto' }}>
             {allNavItems.map((item) => (
               <Button
                 key={item.label}
+                variant="ghost"
                 color="inherit"
                 onClick={() => handleNav(item.href)}
                 sx={{
                   color: 'text.secondary',
                   fontWeight: 600,
-                  px: 1.5,
+                  px: 1,
+                  whiteSpace: 'nowrap',
                   '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
                 }}
               >
@@ -126,13 +130,13 @@ function Navbar() {
             ))}
           </Box>
 
-          <Stack direction="row" spacing={1.25} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-            <Button variant="ghost" onClick={() => navigate('/login')}>
+          <Stack direction="row" spacing={1.25} sx={{ display: { xs: 'none', xl: 'flex' }, alignItems: 'center', flexShrink: 0 }}>
+            {!isAuthenticated && <><Button variant="ghost" onClick={() => navigate('/login')}>
               Sign In
             </Button>
             <Button variant="secondary" onClick={() => navigate('/register')}>
               Register
-            </Button>
+            </Button></>}
             <Button variant="primary" onClick={() => navigate('/reservations/new')}>
               Reserve a Table
             </Button>
@@ -142,7 +146,7 @@ function Navbar() {
             edge="end"
             aria-label="Open menu"
             onClick={() => setMobileOpen((open) => !open)}
-            sx={{ display: { xs: 'flex', md: 'none' }, ml: 1 }}
+            sx={{ display: { xs: 'flex', xl: 'none' }, ml: 1 }}
           >
             {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </IconButton>

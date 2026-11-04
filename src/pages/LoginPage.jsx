@@ -1,6 +1,6 @@
 import { Alert, Box, Container, Paper, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -15,6 +15,7 @@ const initialValues = {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [values, setValues] = useState(initialValues);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,14 +38,13 @@ function LoginPage() {
     setError('');
 
     try {
-      const data = await authApi.login({
+      const result = await authApi.login({
         username: values.username.trim(),
         password: values.password,
       });
 
-      // Redirect admin users to admin dashboard, others to home
-      const role = (data?.user?.role ?? '').toUpperCase();
-      navigate(role.includes('ADMIN') ? '/admin/dashboard' : '/');
+      const from = location.state?.from;
+      navigate(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') ? from : result?.user?.role === 'ROLE_ADMIN' ? '/admin/menu-items' : '/', { replace: true });
     } catch (submitError) {
       setError(submitError.message || 'Unable to sign in right now.');
     } finally {
