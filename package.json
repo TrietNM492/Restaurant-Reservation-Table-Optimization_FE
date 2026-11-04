@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:menu": "node --test tests/menuUtils.test.js",
+    "test:menu:browser": "node tests/menu-browser-smoke.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

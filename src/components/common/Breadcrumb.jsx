@@ -11,6 +11,8 @@ const routeLabels = {
   guests: 'Guests',
   analytics: 'Analytics',
   settings: 'Settings',
+  'menu-categories': 'Menu categories',
+  'menu-items': 'Menu items',
 };
 
 function Breadcrumb() {
