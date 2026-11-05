@@ -40,6 +40,8 @@ const navigationGroups = [
       { label: 'Menu items', to: ROUTES.MENU_ITEMS, icon: RestaurantMenuRoundedIcon },
       { label: 'Guests', to: `${ROUTES.DASHBOARD}#guests`, icon: PeopleAltRoundedIcon },
       { label: 'Table Analytics', to: ROUTES.DASHBOARD_TABLES, icon: InsightsRoundedIcon },
+      { label: 'VIP Room Analytics', to: ROUTES.DASHBOARD_VIP_ROOMS, icon: MeetingRoomRoundedIcon },
+      { label: 'Kitchen Analytics', to: ROUTES.DASHBOARD_KITCHEN, icon: InsightsRoundedIcon },
       { label: 'Settings', to: `${ROUTES.DASHBOARD}#settings`, icon: SettingsRoundedIcon },
     ],
   },
