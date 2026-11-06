@@ -18,11 +18,11 @@ export const ROUTES = {
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
     DASHBOARD_TABLES: '/admin/dashboard/tables',
+    DASHBOARD_VIP_ROOMS: '/admin/dashboard/vip-rooms',
+    DASHBOARD_KITCHEN: '/admin/dashboard/kitchen',
     PAYMENT_RETURN: '/payment/vnpay-return',
     MENU_CATEGORIES: '/admin/menu-categories',
     MENU_ITEMS: '/admin/menu-items',
     MENUS: '/menus',
     MENU_DETAIL: '/menus/:id',
 };
-
-
