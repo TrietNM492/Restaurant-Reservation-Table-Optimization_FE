@@ -29,8 +29,6 @@ const navItems = [
   { label: 'Menu', href: '/menus' },
   { label: 'Explore Restaurants', href: '/restaurants' },
   { label: 'Book VIP Suite', href: '/reservations/vip' },
-  { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'About Us', href: '/#about' },
 ];
 
 function Navbar() {
@@ -39,7 +37,7 @@ function Navbar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const { isAuthenticated, user } = useAuthStore();
-  const userName = user?.name || user?.fullname || user?.fullName || user?.username || user?.email || 'Account';
+  const userName = user?.fullname || user?.name || user?.fullName || user?.username || user?.email || 'Account';
   const avatarSrc = typeof user?.avatar === 'string' ? user.avatar : undefined;
 
   const allNavItems = useMemo(() => {
@@ -160,9 +158,13 @@ function Navbar() {
               <>
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Avatar name={userName} src={avatarSrc} size="small" />
-                  <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 140 }} noWrap>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate('/profile')}
+                    sx={{ minWidth: 0, px: 0.5, fontWeight: 600, maxWidth: 140 }}
+                  >
                     {userName}
-                  </Typography>
+                  </Button>
                 </Stack>
                 <Button variant="secondary" onClick={handleLogout} disabled={loggingOut}>
                   {loggingOut ? 'Signing out...' : 'Logout'}
@@ -210,9 +212,13 @@ function Navbar() {
               <>
                 <Stack direction="row" spacing={1.25} alignItems="center" sx={{ px: 1, py: 0.5 }}>
                   <Avatar name={userName} src={avatarSrc} size="small" />
-                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNav('/profile')}
+                    sx={{ minWidth: 0, px: 0.5, fontWeight: 600 }}
+                  >
                     {userName}
-                  </Typography>
+                  </Button>
                 </Stack>
                 <Button variant="secondary" onClick={handleLogout} disabled={loggingOut}>
                   {loggingOut ? 'Signing out...' : 'Logout'}
