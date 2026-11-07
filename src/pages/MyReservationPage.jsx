@@ -352,6 +352,16 @@ function MyReservationPage() {
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {isPending ? (
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => navigate(`/menus?reservationId=${res.id}`)}
+                          >
+                            Đặt món & Trả cọc
+                          </Button>
+                        ) : null}
+
                         {isPending && !isVip ? (
                           <Button
                             variant="secondary"

@@ -39,6 +39,7 @@ import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRound
 
 import PrepTimeMiniWidget from '../prediction/PrepTimeMiniWidget';
 import { orderApi } from '../../services/orderService';
+import { paymentApi } from '../../services/paymentService';
 import { formatMenuPrice } from '../../utils/menuUtils';
 import { useOrderStore } from '../../stores/useOrderStore';
 
@@ -80,6 +81,7 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
   const [loadingTables, setLoadingTables] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [alertNotice, setAlertNotice] = useState({ open: false, message: '', severity: 'info' });
 
@@ -250,6 +252,49 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
         message: err.message || 'Không thể xóa món khi bếp đã nấu.',
         severity: 'error',
       });
+    }
+  };
+
+  // Trigger VNPay Payment for active table order
+  const handlePayWithVnPay = async () => {
+    if (!activeOrder?.id) return;
+
+    if (!activeOrder.totalAmount || activeOrder.totalAmount <= 0) {
+      setAlertNotice({
+        open: true,
+        message: 'Hoá đơn bàn có tổng tiền bằng 0, không thể thanh toán.',
+        severity: 'warning',
+      });
+      return;
+    }
+
+    try {
+      setPaying(true);
+      setAlertNotice({
+        open: true,
+        message: 'Đang kết nối cổng VNPay Sandbox...',
+        severity: 'info',
+      });
+
+      const response = await paymentApi.createPayment({
+        orderId: activeOrder.id,
+        amount: activeOrder.totalAmount,
+      });
+
+      if (response?.paymentUrl) {
+        // Redirect customer directly to VNPay sandbox gateway
+        window.location.href = response.paymentUrl;
+      } else {
+        throw new Error('Không nhận được đường dẫn thanh toán từ cổng VNPay.');
+      }
+    } catch (err) {
+      setAlertNotice({
+        open: true,
+        message: err.message || 'Không thể tạo phiên thanh toán VNPay.',
+        severity: 'error',
+      });
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -626,21 +671,18 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
                   </Button>
                 )}
 
-                {/* Thanh toán VNPay Trigger (Wired in Phase 3) */}
+                {/* Thanh toán VNPay Trigger */}
                 <Button
                   variant="contained"
                   fullWidth
                   color="success"
-                  startIcon={<PaymentRoundedIcon />}
+                  disabled={paying || submitting}
+                  startIcon={paying ? <CircularProgress size={20} sx={{ color: '#fff' }} /> : <PaymentRoundedIcon />}
                   onClick={() => {
                     if (onInitiatePayment) {
                       onInitiatePayment(activeOrder);
                     } else {
-                      setAlertNotice({
-                        open: true,
-                        message: `Đang kết nối cổng VNPay cho hoá đơn bàn ${activeOrder.tableNumber || ''}...`,
-                        severity: 'info',
-                      });
+                      handlePayWithVnPay();
                     }
                   }}
                   sx={{
@@ -648,9 +690,13 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
                     fontWeight: 700,
                     py: 1.25,
                     borderRadius: 2.5,
+                    bgcolor: '#16A34A',
+                    '&:hover': { bgcolor: '#15803D' },
                   }}
                 >
-                  Thanh toán hoá đơn bàn ({formatMenuPrice(activeOrder.totalAmount)})
+                  {paying
+                    ? 'Đang chuyển hướng VNPay...'
+                    : `Thanh toán hoá đơn bàn (${formatMenuPrice(activeOrder.totalAmount)})`}
                 </Button>
 
                 <Button
