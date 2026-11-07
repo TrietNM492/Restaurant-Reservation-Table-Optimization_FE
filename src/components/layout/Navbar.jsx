@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  Alert,
   AppBar,
   Box,
   Container,
@@ -19,6 +20,8 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { useNavigate } from 'react-router-dom';
 
 import Button from '../ui/Button';
+import Avatar from '../ui/Avatar';
+import { authApi } from '../../services/authService.js';
 import { useAuthStore } from '../../stores/useAuthStore';
 
 const navItems = [
@@ -33,7 +36,11 @@ const navItems = [
 function Navbar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
   const { isAuthenticated, user } = useAuthStore();
+  const userName = user?.name || user?.fullname || user?.fullName || user?.username || user?.email || 'Account';
+  const avatarSrc = typeof user?.avatar === 'string' ? user.avatar : undefined;
 
   const allNavItems = useMemo(() => {
     if (isAuthenticated) {
@@ -61,6 +68,24 @@ function Navbar() {
 
     navigate(path);
     setMobileOpen(false);
+  };
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    setLogoutError('');
+
+    try {
+      await authApi.logout();
+    } catch (error) {
+      setLogoutError(
+        typeof error?.response?.data?.message === 'string'
+          ? error.response.data.message
+          : 'Unable to sign out from the server. Your local session has been cleared.',
+      );
+    } finally {
+      setLoggingOut(false);
+      setMobileOpen(false);
+    }
   };
 
   return (
@@ -131,12 +156,28 @@ function Navbar() {
           </Box>
 
           <Stack direction="row" spacing={1.25} sx={{ display: { xs: 'none', xl: 'flex' }, alignItems: 'center', flexShrink: 0 }}>
-            {!isAuthenticated && <><Button variant="ghost" onClick={() => navigate('/login')}>
-              Sign In
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/register')}>
-              Register
-            </Button></>}
+            {isAuthenticated ? (
+              <>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Avatar name={userName} src={avatarSrc} size="small" />
+                  <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 140 }} noWrap>
+                    {userName}
+                  </Typography>
+                </Stack>
+                <Button variant="secondary" onClick={handleLogout} disabled={loggingOut}>
+                  {loggingOut ? 'Signing out...' : 'Logout'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/login')}>
+                  Sign In
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/register')}>
+                  Register
+                </Button>
+              </>
+            )}
             <Button variant="primary" onClick={() => navigate('/reservations/new')}>
               Reserve a Table
             </Button>
@@ -165,15 +206,36 @@ function Navbar() {
             ))}
           </List>
           <Stack spacing={1.25} sx={{ mt: 2 }}>
-            <Button variant="secondary" onClick={() => navigate('/login')}>
-              Sign In
-            </Button>
-            <Button variant="primary" onClick={() => navigate('/register')}>
-              Register
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Stack direction="row" spacing={1.25} alignItems="center" sx={{ px: 1, py: 0.5 }}>
+                  <Avatar name={userName} src={avatarSrc} size="small" />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                    {userName}
+                  </Typography>
+                </Stack>
+                <Button variant="secondary" onClick={handleLogout} disabled={loggingOut}>
+                  {loggingOut ? 'Signing out...' : 'Logout'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => navigate('/login')}>
+                  Sign In
+                </Button>
+                <Button variant="primary" onClick={() => navigate('/register')}>
+                  Register
+                </Button>
+              </>
+            )}
           </Stack>
         </Box>
       </Drawer>
+      {logoutError ? (
+        <Alert severity="warning" onClose={() => setLogoutError('')}>
+          {logoutError}
+        </Alert>
+      ) : null}
     </AppBar>
   );
 }
