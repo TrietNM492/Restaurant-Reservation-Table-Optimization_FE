@@ -31,6 +31,7 @@ const MenuManagementPage = lazy(() => import('../pages/MenuManagementPage'));
 const MenuBrowsingPage = lazy(() => import('../pages/MenuBrowsingPage'));
 const RoleManagementPage = lazy(() => import('../pages/RoleManagementPage'));
 const StaffManagementPage = lazy(() => import('../pages/StaffManagementPage'));
+const TablePlanningPage = lazy(() => import('../pages/TablePlanningPage'));
 
 export const routeConfig = [
     {
@@ -92,6 +93,14 @@ export const routeConfig = [
                 path: ROUTES.RESERVATION_VIP,
                 element: createElement(ReservationVipPage),
             },
+            {
+                path: ROUTES.TABLE_RECOMMENDATIONS,
+                element: createElement(TablePlanningPage, { key: 'customer-allocation', customer: true }),
+            },
+            {
+                path: ROUTES.TABLE_COMBINATIONS,
+                element: createElement(TablePlanningPage, { key: 'customer-combinations', module: 'combination', customer: true }),
+            },
         ],
     },
 
@@ -117,6 +126,14 @@ export const routeConfig = [
             {
                 path: ROUTES.TABLE_TRACKING,
                 element: createElement(TableStatusTrackingPage),
+            },
+            {
+                path: ROUTES.TABLE_ALLOCATION,
+                element: createElement(TablePlanningPage, { key: 'staff-allocation' }),
+            },
+            {
+                path: ROUTES.MULTI_TABLE_COMBINATION,
+                element: createElement(TablePlanningPage, { key: 'staff-combinations', module: 'combination' }),
             },
             {
                 path: ROUTES.KITCHEN_QUEUE,
