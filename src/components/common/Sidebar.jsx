@@ -1,11 +1,11 @@
-﻿import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AdminPanelSettingsRoundedIcon from '@mui/icons-material/AdminPanelSettingsRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
-import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
 import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
 import RestaurantRoundedIcon from '@mui/icons-material/RestaurantRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
 import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
@@ -14,7 +14,11 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
 import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 import { ROUTES } from '../../routes/routeConstants';
+import { authApi } from '../../services/authService.js';
+import { useAuthStore } from '../../stores/useAuthStore';
+import Avatar from '../ui/Avatar';
 
 const navigationGroups = [
   {
@@ -45,6 +49,31 @@ const navigationGroups = [
 
 function SidebarContent({ onNavigate }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const userName = user?.fullname || user?.name || user?.fullName || user?.username || user?.email || 'Account';
+  const avatarSrc = typeof user?.avatar === 'string' ? user.avatar : undefined;
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    let logoutError;
+
+    try {
+      await authApi.logout();
+    } catch (error) {
+      logoutError = typeof error?.response?.data?.message === 'string'
+        ? error.response.data.message
+        : error?.message || 'Unable to sign out from the server. Your local session has been cleared.';
+    } finally {
+      onNavigate?.();
+      navigate(ROUTES.HOME, {
+        replace: true,
+        state: logoutError ? { logoutError } : null,
+      });
+    }
+  };
 
   return (
     <Box className="app-sidebar__content">
@@ -79,16 +108,22 @@ function SidebarContent({ onNavigate }) {
       ))}
 
       <Box className="app-sidebar__bottom">
-        <Box className="app-sidebar__help">
-          <HelpOutlineRoundedIcon aria-hidden="true" />
-          <Typography component="strong">Need a hand?</Typography>
-          <Typography component="p">Our team is here to help make service seamless.</Typography>
-          <Button variant="outlined" size="small">Visit help center</Button>
-        </Box>
         <Box className="app-sidebar__account">
-          <span className="app-sidebar__account-mark">G</span>
-          <span><strong>The Greenhouse</strong><small>Restaurant admin</small></span>
-          <span className="app-sidebar__account-menu" aria-hidden="true">••••</span>
+          <Avatar name={userName} src={avatarSrc} size="small" />
+          <Box className="app-sidebar__account-details">
+            <strong>{userName}</strong>
+            <small>{user?.role || 'Signed in'}</small>
+          </Box>
+          <Button
+            className="app-sidebar__logout"
+            size="small"
+            startIcon={<LogoutRoundedIcon />}
+            onClick={handleLogout}
+            disabled={loggingOut}
+            aria-label="Log out"
+          >
+            {loggingOut ? 'Signing out…' : 'Logout'}
+          </Button>
         </Box>
       </Box>
     </Box>
