@@ -2,6 +2,7 @@ export const ROUTES = {
     HOME: '/',
     LOGIN: '/login',
     REGISTER: '/register',
+    PROFILE: '/profile',
     RESTAURANTS: '/restaurants',
     RESTAURANT_DETAIL: '/restaurants/:id',
     RESERVATION_NEW: '/reservations/new',
@@ -23,6 +24,8 @@ export const ROUTES = {
     PAYMENT_RETURN: '/payment/vnpay-return',
     MENU_CATEGORIES: '/admin/menu-categories',
     MENU_ITEMS: '/admin/menu-items',
+    ROLE_MANAGEMENT: '/admin/roles',
+    STAFF_MANAGEMENT: '/admin/staff',
     MENUS: '/menus',
     MENU_DETAIL: '/menus/:id',
 };

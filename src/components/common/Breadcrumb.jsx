@@ -13,6 +13,8 @@ const routeLabels = {
   settings: 'Settings',
   'menu-categories': 'Menu categories',
   'menu-items': 'Menu items',
+  roles: 'Role Management',
+  staff: 'Staff Management',
 };
 
 function Breadcrumb() {
