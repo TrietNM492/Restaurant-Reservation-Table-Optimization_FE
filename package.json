@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "test:menu": "node --test tests/menuUtils.test.js",
     "test:menu:browser": "node tests/menu-browser-smoke.mjs",
+    "test:allocation": "node --test tests/tableAllocation.test.js",
+    "test:allocation:browser": "node tests/table-allocation-browser-smoke.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

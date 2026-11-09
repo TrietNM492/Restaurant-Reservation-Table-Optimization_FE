@@ -10,6 +10,8 @@ import TableBarRoundedIcon from '@mui/icons-material/TableBarRounded';
 import TableRestaurantRoundedIcon from '@mui/icons-material/TableRestaurantRounded';
 import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
+import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
@@ -27,6 +29,13 @@ const navigationGroups = [
       { label: 'Overview', to: ROUTES.DASHBOARD, icon: DashboardRoundedIcon },
       { label: 'Floor plan', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },
       { label: 'Kitchen Queue', to: ROUTES.KITCHEN_QUEUE, icon: RestaurantRoundedIcon },
+    ],
+  },
+  {
+    label: 'Smart seating',
+    items: [
+      { label: 'Intelligent Allocation', to: ROUTES.TABLE_ALLOCATION, icon: AutoAwesomeRoundedIcon },
+      { label: 'Multi-Table Combination', to: ROUTES.MULTI_TABLE_COMBINATION, icon: ViewModuleRoundedIcon },
     ],
   },
   {

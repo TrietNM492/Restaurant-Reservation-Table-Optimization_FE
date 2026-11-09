@@ -15,6 +15,8 @@ const routeLabels = {
   'menu-items': 'Menu items',
   roles: 'Role Management',
   staff: 'Staff Management',
+  'table-allocation': 'Intelligent Allocation',
+  'table-combinations': 'Multi-Table Combination',
 };
 
 function Breadcrumb() {

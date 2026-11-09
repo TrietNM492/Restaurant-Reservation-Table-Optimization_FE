@@ -29,6 +29,7 @@ const navItems = [
   { label: 'Menu', href: '/menus' },
   { label: 'Explore Restaurants', href: '/restaurants' },
   { label: 'Book VIP Suite', href: '/reservations/vip' },
+  { label: 'Smart seating', href: '/tables/recommendations' },
 ];
 
 function Navbar() {
