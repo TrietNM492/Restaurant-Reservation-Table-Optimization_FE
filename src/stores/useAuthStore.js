@@ -41,6 +41,21 @@ export const useAuthStore = create((set) => ({
     set(nextState);
   },
 
+  updateUser: (userUpdates) => {
+    const user = { ...useAuthStore.getState().user, ...userUpdates };
+    const nextState = { user };
+
+    if (typeof window !== 'undefined') {
+      const { accessToken, isAuthenticated } = useAuthStore.getState();
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ accessToken, isAuthenticated, user }),
+      );
+    }
+
+    set(nextState);
+  },
+
   logout: () => {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(STORAGE_KEY);

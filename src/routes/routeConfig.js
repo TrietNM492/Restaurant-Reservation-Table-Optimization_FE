@@ -15,7 +15,10 @@ const RestaurantDetailPage = lazy(() => import('../pages/RestaurantDetailPage'))
 const ReservationPage = lazy(() => import('../pages/ReservationPage'));
 const ReservationVipPage = lazy(() => import('../pages/ReservationVipPage'));
 const MyReservationPage = lazy(() => import('../pages/MyReservationPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const VipRoomAnalyticsPage = lazy(() => import('../pages/VipRoomAnalyticsPage'));
+const KitchenPerformanceAnalyticsPage = lazy(() => import('../pages/KitchenPerformanceAnalyticsPage'));
 const TableAreaManagementPage = lazy(() => import('../pages/TableAreaManagementPage'));
 const TableManagementPage = lazy(() => import('../pages/TableManagementPage'));
 const TableStatusTrackingPage = lazy(() => import('../pages/TableStatusTrackingPage'));
@@ -26,6 +29,8 @@ const PageTemp = lazy(() => import('../pages/PageTemp'));
 const NotFoundPage = lazy(() => import('../pages/error/NotFound'));
 const MenuManagementPage = lazy(() => import('../pages/MenuManagementPage'));
 const MenuBrowsingPage = lazy(() => import('../pages/MenuBrowsingPage'));
+const RoleManagementPage = lazy(() => import('../pages/RoleManagementPage'));
+const StaffManagementPage = lazy(() => import('../pages/StaffManagementPage'));
 
 export const routeConfig = [
     {
@@ -71,6 +76,10 @@ export const routeConfig = [
             createElement(AuthLayout)
         ),
         children: [
+            {
+                path: ROUTES.PROFILE,
+                element: createElement(ProfilePage),
+            },
             {
                 path: ROUTES.RESERVATIONS_ME,
                 element: createElement(MyReservationPage),
@@ -120,6 +129,22 @@ export const routeConfig = [
             {
                 path: ROUTES.DASHBOARD_TABLES,
                 element: createElement(DashboardPage),
+            },
+            {
+                path: ROUTES.DASHBOARD_VIP_ROOMS,
+                element: createElement(VipRoomAnalyticsPage),
+            },
+            {
+                path: ROUTES.DASHBOARD_KITCHEN,
+                element: createElement(KitchenPerformanceAnalyticsPage),
+            },
+            {
+                path: ROUTES.ROLE_MANAGEMENT,
+                element: createElement(RoleManagementPage),
+            },
+            {
+                path: ROUTES.STAFF_MANAGEMENT,
+                element: createElement(StaffManagementPage),
             },
         ],
     },

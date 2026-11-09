@@ -2,6 +2,7 @@ export const ROUTES = {
     HOME: '/',
     LOGIN: '/login',
     REGISTER: '/register',
+    PROFILE: '/profile',
     RESTAURANTS: '/restaurants',
     RESTAURANT_DETAIL: '/restaurants/:id',
     RESERVATION_NEW: '/reservations/new',
@@ -18,11 +19,13 @@ export const ROUTES = {
     PAGE_TEMP: '/page-temp',
     NOT_FOUND: '*',
     DASHBOARD_TABLES: '/admin/dashboard/tables',
+    DASHBOARD_VIP_ROOMS: '/admin/dashboard/vip-rooms',
+    DASHBOARD_KITCHEN: '/admin/dashboard/kitchen',
     PAYMENT_RETURN: '/payment/vnpay-return',
     MENU_CATEGORIES: '/admin/menu-categories',
     MENU_ITEMS: '/admin/menu-items',
+    ROLE_MANAGEMENT: '/admin/roles',
+    STAFF_MANAGEMENT: '/admin/staff',
     MENUS: '/menus',
     MENU_DETAIL: '/menus/:id',
 };
-
-
