@@ -21,12 +21,15 @@ export const orderApi = {
   },
 
   /**
-   * Get active order details and kitchen status for customer or order ID
+   * Get active order details and kitchen status for customer or order ID / reservation ID
    * @param {number} [orderId] - Specific order ID (optional)
+   * @param {number} [reservationId] - Specific reservation ID (optional)
    * @returns {Promise<object>} OrderResponseDTO
    */
-  getOrderStatus: async (orderId) => {
-    const params = orderId ? { orderId } : {};
+  getOrderStatus: async (orderId, reservationId) => {
+    const params = {};
+    if (orderId) params.orderId = orderId;
+    if (reservationId) params.reservationId = reservationId;
     const response = await api.get('/orders/status', { params }).catch((error) => {
       const message = error.response?.data?.message ?? 'Unable to retrieve order status.';
       throw new Error(typeof message === 'string' ? message : 'Unable to retrieve order status.', { cause: error });

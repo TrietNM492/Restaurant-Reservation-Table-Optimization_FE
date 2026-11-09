@@ -34,6 +34,8 @@ import Footer from '../components/layout/Footer';
 import DiningOrderDrawer from '../components/orders/DiningOrderDrawer';
 import { MenuEmpty, MenuError, MenuImage, MenuLoading, MenuPagination } from '../components/menu/MenuStates';
 import { publicMenuApi } from '../services/menuManagementService';
+import { orderApi } from '../services/orderService';
+import { reservationApi } from '../services/reservationService';
 import { formatMenuPrice, readBrowseParams } from '../utils/menuUtils';
 import { useOrderStore } from '../stores/useOrderStore';
 
@@ -156,7 +158,7 @@ function MenuDetail({ id, onClose, onAddToOrder }) {
             }}
             sx={{ bgcolor: '#7C3AED', '&:hover': { bgcolor: '#6D28D9' }, textTransform: 'none', fontWeight: 700 }}
           >
-            Thêm vào bàn
+            Add to Table
           </Button>
         )}
       </DialogActions>
@@ -171,21 +173,95 @@ export default function MenuBrowsingPage() {
   const params = readBrowseParams(searchParams);
 
   // Order Store for table ordering & prep time estimation
-  const { items, activeOrder, setDrawerOpen, addItem, setSelectedTableId, setSelectedReservationId } = useOrderStore();
+  const {
+    items,
+    activeOrder,
+    setActiveOrder,
+    setDrawerOpen,
+    addItem,
+    setSelectedTableId,
+    setSelectedReservationId,
+    setSelectedVipRoom,
+  } = useOrderStore();
 
-  // Auto-detect tableId or reservationId from URL query (e.g. from QR scan or table click)
+  // Auto-detect tableId, reservationId, and VIP room details from URL query
   useEffect(() => {
     const queryTableId = searchParams.get('tableId');
+    const queryResId = searchParams.get('reservationId');
+    const queryIsVip = searchParams.get('isVip') === 'true';
+
     if (queryTableId) {
       setSelectedTableId(Number(queryTableId));
-      setDrawerOpen(true);
     }
-    const queryResId = searchParams.get('reservationId');
+
+    if (queryIsVip || searchParams.get('roomId')) {
+      setSelectedVipRoom({
+        roomId: searchParams.get('roomId'),
+        roomName: searchParams.get('roomName'),
+        roomPrice: searchParams.get('roomPrice'),
+        reservationNo: searchParams.get('reservationNo'),
+      });
+    }
+
     if (queryResId) {
-      setSelectedReservationId(Number(queryResId));
+      const resId = Number(queryResId);
+      setSelectedReservationId(resId);
+
+      // Check if an order already exists for this reservation
+      orderApi.getOrderStatus(null, resId)
+        .then((existingOrder) => {
+          if (existingOrder) {
+            setActiveOrder(existingOrder);
+          }
+        })
+        .catch(() => {});
+
+      // Auto-bind reservation details (room or table) from reservation service
+      reservationApi.listMine()
+        .then((reservations) => {
+          if (Array.isArray(reservations)) {
+            const matched = reservations.find((r) => r.id === resId);
+            if (matched) {
+              if (matched.rooms && matched.rooms.length > 0) {
+                const r0 = matched.rooms[0];
+                setSelectedVipRoom({
+                  roomId: r0.id,
+                  roomName: r0.roomName,
+                  roomPrice: r0.price,
+                  reservationNo: matched.reservationNo,
+                });
+              } else if (matched.tables && matched.tables.length > 0) {
+                setSelectedTableId(matched.tables[0].id);
+              }
+            }
+          }
+        })
+        .catch(() => {});
+
+      // Auto-open drawer when entering via Pre-order & Pay Deposit
       setDrawerOpen(true);
     }
-  }, [searchParams, setSelectedTableId, setSelectedReservationId, setDrawerOpen]);
+  }, [searchParams, setSelectedTableId, setSelectedReservationId, setSelectedVipRoom, setActiveOrder, setDrawerOpen]);
+
+  // Validate active order status on page load (clear stale/completed table order if closed by staff)
+  useEffect(() => {
+    if (!activeOrder?.id) return;
+    let isCancelled = false;
+    orderApi.getOrderStatus(activeOrder.id)
+      .then((latest) => {
+        if (!isCancelled && latest?.orderStatus === 'COMPLETED') {
+          useOrderStore.getState().resetOrder();
+        }
+      })
+      .catch((err) => {
+        if (!isCancelled && (err?.response?.status === 404 || err?.status === 404)) {
+          useOrderStore.getState().resetOrder();
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeOrder?.id]);
 
   const categories = useQuery({ queryKey: ['menu', 'public', 'categories'], queryFn: ({ signal }) => publicMenuApi.categories(signal) });
   const list = useQuery({ queryKey: ['menu', 'public', 'browse', params], queryFn: ({ signal }) => publicMenuApi.browse(params, signal) });
@@ -230,7 +306,7 @@ export default function MenuBrowsingPage() {
                   fontWeight: 700,
                 }}
               >
-                {activeOrder ? `Xem Đơn Bàn ${activeOrder.tableNumber || activeOrder.tableId}` : `Giỏ gọi món (${totalItemCount})`}
+                {activeOrder ? `Table ${activeOrder.tableNumber || activeOrder.tableId} Order` : `Order Cart (${totalItemCount})`}
               </Button>
             </Stack>
           </Container>
@@ -369,7 +445,7 @@ export default function MenuBrowsingPage() {
                             fontSize: 13,
                           }}
                         >
-                          {item.available ? 'Thêm vào bàn' : 'Hết món'}
+                          {item.available ? 'Add to Table' : 'Sold Out'}
                         </Button>
                       </Box>
                     </Card>
@@ -402,8 +478,8 @@ export default function MenuBrowsingPage() {
             }}
           >
             {activeOrder
-              ? `Đơn Bàn ${activeOrder.tableNumber || activeOrder.tableId}`
-              : `Giỏ gọi món (${totalItemCount})`}
+              ? `Table ${activeOrder.tableNumber || activeOrder.tableId} Order`
+              : `Order Cart (${totalItemCount})`}
           </Button>
         </Badge>
       </Box>

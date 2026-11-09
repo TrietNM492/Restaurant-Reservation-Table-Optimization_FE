@@ -4,20 +4,57 @@ const STORAGE_KEY = 'restaurant-dining-order';
 
 const readInitialState = () => {
   if (typeof window === 'undefined') {
-    return { items: [], selectedTableId: null, selectedReservationId: null, activeOrder: null };
+    return {
+      items: [],
+      selectedTableId: null,
+      selectedReservationId: null,
+      selectedReservationNo: null,
+      isVipRoom: false,
+      selectedRoomId: null,
+      selectedRoomName: null,
+      selectedRoomPrice: 0,
+      activeOrder: null,
+    };
   }
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return { items: [], selectedTableId: null, selectedReservationId: null, activeOrder: null };
+    if (!raw) {
+      return {
+        items: [],
+        selectedTableId: null,
+        selectedReservationId: null,
+        selectedReservationNo: null,
+        isVipRoom: false,
+        selectedRoomId: null,
+        selectedRoomName: null,
+        selectedRoomPrice: 0,
+        activeOrder: null,
+      };
+    }
     const parsed = JSON.parse(raw);
     return {
       items: Array.isArray(parsed.items) ? parsed.items : [],
       selectedTableId: parsed.selectedTableId ?? null,
       selectedReservationId: parsed.selectedReservationId ?? null,
+      selectedReservationNo: parsed.selectedReservationNo ?? null,
+      isVipRoom: Boolean(parsed.isVipRoom),
+      selectedRoomId: parsed.selectedRoomId ?? null,
+      selectedRoomName: parsed.selectedRoomName ?? null,
+      selectedRoomPrice: Number(parsed.selectedRoomPrice) || 0,
       activeOrder: parsed.activeOrder ?? null,
     };
   } catch {
-    return { items: [], selectedTableId: null, selectedReservationId: null, activeOrder: null };
+    return {
+      items: [],
+      selectedTableId: null,
+      selectedReservationId: null,
+      selectedReservationNo: null,
+      isVipRoom: false,
+      selectedRoomId: null,
+      selectedRoomName: null,
+      selectedRoomPrice: 0,
+      activeOrder: null,
+    };
   }
 };
 
@@ -30,6 +67,11 @@ const persistState = (state) => {
           items: state.items,
           selectedTableId: state.selectedTableId,
           selectedReservationId: state.selectedReservationId,
+          selectedReservationNo: state.selectedReservationNo,
+          isVipRoom: state.isVipRoom,
+          selectedRoomId: state.selectedRoomId,
+          selectedRoomName: state.selectedRoomName,
+          selectedRoomPrice: state.selectedRoomPrice,
           activeOrder: state.activeOrder,
         })
       );
@@ -56,6 +98,21 @@ export const useOrderStore = create((set) => ({
   setSelectedReservationId: (reservationId) => {
     set((state) => {
       const next = { ...state, selectedReservationId: reservationId ? Number(reservationId) : null };
+      persistState(next);
+      return next;
+    });
+  },
+
+  setSelectedVipRoom: ({ roomId, roomName, roomPrice, reservationNo }) => {
+    set((state) => {
+      const next = {
+        ...state,
+        isVipRoom: true,
+        selectedRoomId: roomId ? Number(roomId) : null,
+        selectedRoomName: roomName || null,
+        selectedRoomPrice: Number(roomPrice) || 0,
+        selectedReservationNo: reservationNo || null,
+      };
       persistState(next);
       return next;
     });
@@ -89,7 +146,7 @@ export const useOrderStore = create((set) => ({
         };
         updatedItems = [...state.items, newItem];
       }
-      const nextState = { ...state, items: updatedItems, isDrawerOpen: true };
+      const nextState = { ...state, items: updatedItems };
       persistState(nextState);
       return nextState;
     });
@@ -134,6 +191,11 @@ export const useOrderStore = create((set) => ({
         items: [],
         selectedTableId: null,
         selectedReservationId: null,
+        selectedReservationNo: null,
+        isVipRoom: false,
+        selectedRoomId: null,
+        selectedRoomName: null,
+        selectedRoomPrice: 0,
         activeOrder: null,
         isDrawerOpen: false,
       };

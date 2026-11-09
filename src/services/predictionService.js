@@ -11,7 +11,7 @@ export const predictionApi = {
    * @returns {Promise<object>} PreparationTimePredictionResponseDTO
    */
   predictPreparationTime: async (payload = {}) => {
-    const response = await api.post('/predictions/preparation-time', payload).catch((error) => {
+    const response = await api.post('/predictions/preparation-time', payload, { skipAuth: true }).catch((error) => {
       const message = error.response?.data?.message ?? 'Failed to calculate food preparation time.';
       throw new Error(typeof message === 'string' ? message : 'Failed to calculate food preparation time.', { cause: error });
     });

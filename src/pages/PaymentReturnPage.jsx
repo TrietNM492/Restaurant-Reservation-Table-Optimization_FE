@@ -28,7 +28,24 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import Loading from '../components/ui/Loading';
 import { paymentApi } from '../services/paymentService';
+import { useOrderStore } from '../stores/useOrderStore';
 import { ROUTES } from '../routes/routeConstants';
+
+// Helper to determine if invoice or return result represents full payment
+const checkIsFullyPaid = (inv, res) => {
+  if (inv) {
+    if (inv.fullyPaid === true || inv.isFullyPaid === true) return true;
+    if (inv.paymentStatus === 'PAID') return true;
+    if (inv.orderRemainingAmount != null && Number(inv.orderRemainingAmount) <= 0) return true;
+    if (inv.remainingMessage && inv.remainingMessage.toLowerCase().includes('fully')) return true;
+    return false;
+  }
+  if (res) {
+    if (res.paymentStatus === 'PAID') return true;
+    return Boolean((res.fullyPaid || res.isFullyPaid) && res.paymentType !== 'DEPOSIT');
+  }
+  return false;
+};
 
 export default function PaymentReturnPage() {
   const [searchParams] = useSearchParams();
@@ -36,6 +53,7 @@ export default function PaymentReturnPage() {
 
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState(null);
+  const [invoice, setInvoice] = useState(null);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
@@ -55,26 +73,90 @@ export default function PaymentReturnPage() {
           return;
         }
 
-        // Send parameters to backend for cryptographic signature verification & status update
+        // Case 1: Direct test / view by paymentId (e.g. ?paymentId=14)
+        if (params.paymentId && !params.vnp_SecureHash) {
+          try {
+            const inv = await paymentApi.getInvoice(params.paymentId);
+            const fullyPaid = checkIsFullyPaid(inv);
+            setInvoice(inv);
+            setResult({
+              success: inv.paymentStatus === 'PAID' || inv.paymentStatus === 'PARTIALLY_PAID',
+              responseCode: '00',
+              message: 'Payment verified',
+              paymentId: inv.paymentId,
+              txnRef: `INV-${inv.orderId}-${inv.paymentId}`,
+              transactionNo: `TXN-${inv.paymentId}`,
+              bankCode: 'VNPAY',
+              amount: String(inv.paymentAmount),
+              payDate: inv.paymentDate,
+              orderInfo: `Thanh toan don hang ${inv.orderNo}`,
+              isFullyPaid: fullyPaid,
+            });
+            return;
+          } catch (invErr) {
+            console.warn('Failed to load invoice directly by paymentId:', invErr);
+          }
+        }
+
+        // Case 2: Returning from VNPay gateway
         const data = await paymentApi.processVnPayReturn(params);
         setResult(data);
+
+        // Fetch detailed invoice for exact settlement breakdown (50% deposit vs 100% full)
+        const pId = data?.paymentId || (params.vnp_TxnRef ? params.vnp_TxnRef.split('T')[0] : null);
+        let detailedInvoice = null;
+        if (pId) {
+          try {
+            detailedInvoice = await paymentApi.getInvoice(pId);
+            setInvoice(detailedInvoice);
+          } catch (invErr) {
+            console.warn('Could not fetch detailed invoice:', invErr);
+          }
+        }
+
+        const isFull = checkIsFullyPaid(detailedInvoice, data);
+
+        // Update active order state if payment succeeded and fully settled
+        if (data?.success && isFull) {
+          const current = useOrderStore.getState().activeOrder;
+          if (current) {
+            useOrderStore.getState().setActiveOrder({ ...current, orderStatus: 'OK' });
+          }
+        }
       } catch (err) {
         // Fallback to query param interpretation if backend had temporary error
         const code = searchParams.get('vnp_ResponseCode');
         const isSuccess = code === '00';
+        const pId = searchParams.get('paymentId') || (searchParams.get('vnp_TxnRef') ? searchParams.get('vnp_TxnRef').split('T')[0] : null);
+
+        let detailedInvoice = null;
+        if (pId) {
+          try {
+            detailedInvoice = await paymentApi.getInvoice(pId);
+            setInvoice(detailedInvoice);
+          } catch {
+            // ignore
+          }
+        }
+
+        const isFull = checkIsFullyPaid(detailedInvoice);
+
         setResult({
-          success: isSuccess,
+          success: isSuccess || (detailedInvoice && (detailedInvoice.paymentStatus === 'PAID' || detailedInvoice.paymentStatus === 'PARTIALLY_PAID')),
           responseCode: code,
           message: err.message || (isSuccess ? 'Transaction verified' : 'Transaction failed or cancelled'),
-          paymentId: searchParams.get('vnp_TxnRef'),
+          paymentId: pId,
           txnRef: searchParams.get('vnp_TxnRef'),
           transactionNo: searchParams.get('vnp_TransactionNo'),
           bankCode: searchParams.get('vnp_BankCode'),
-          amount: searchParams.get('vnp_Amount')
-            ? String(Number(searchParams.get('vnp_Amount')) / 100)
-            : '0',
-          payDate: searchParams.get('vnp_PayDate'),
+          amount: detailedInvoice?.paymentAmount
+            ? String(detailedInvoice.paymentAmount)
+            : (searchParams.get('vnp_Amount')
+                ? String(Number(searchParams.get('vnp_Amount')) / 100)
+                : '0'),
+          payDate: detailedInvoice?.paymentDate || searchParams.get('vnp_PayDate'),
           orderInfo: searchParams.get('vnp_OrderInfo'),
+          isFullyPaid: isFull,
         });
       } finally {
         setLoading(false);
@@ -85,7 +167,7 @@ export default function PaymentReturnPage() {
   }, [searchParams]);
 
   const handleDownloadInvoice = async () => {
-    const pId = result?.paymentId || searchParams.get('vnp_TxnRef');
+    const pId = invoice?.paymentId || result?.paymentId || (searchParams.get('vnp_TxnRef') ? searchParams.get('vnp_TxnRef').split('T')[0] : null) || searchParams.get('paymentId');
     if (!pId) {
       alert('Invoice download is available once payment is recorded in the system.');
       return;
@@ -100,7 +182,14 @@ export default function PaymentReturnPage() {
     }
   };
 
-  const isSuccess = result?.success || result?.responseCode === '00';
+  const isSuccess = Boolean(
+    result?.success ||
+    result?.responseCode === '00' ||
+    invoice?.paymentStatus === 'PAID' ||
+    invoice?.paymentStatus === 'PARTIALLY_PAID'
+  );
+
+  const isFullyPaid = checkIsFullyPaid(invoice, result);
 
   // Format currency
   const formatVnd = (amount) => {
@@ -259,7 +348,9 @@ export default function PaymentReturnPage() {
                     mb: 0.5,
                   }}
                 >
-                  {isSuccess ? 'OFFICIAL RESERVATION CONFIRMATION' : 'PAYMENT NOTICE'}
+                  {isSuccess
+                    ? (isFullyPaid ? 'OFFICIAL TABLE DINING RECEIPT' : 'OFFICIAL RESERVATION CONFIRMATION')
+                    : 'PAYMENT NOTICE'}
                 </Typography>
 
                 <Typography
@@ -272,7 +363,9 @@ export default function PaymentReturnPage() {
                     fontSize: { xs: '1.625rem', sm: '2.125rem' },
                   }}
                 >
-                  {isSuccess ? 'Reservation Deposit Confirmed!' : 'Payment Incomplete or Cancelled'}
+                  {isSuccess
+                    ? (isFullyPaid ? 'Order Payment Successful!' : 'Reservation Deposit Confirmed!')
+                    : 'Payment Incomplete or Cancelled'}
                 </Typography>
 
                 <Typography
@@ -286,7 +379,9 @@ export default function PaymentReturnPage() {
                   }}
                 >
                   {isSuccess
-                    ? 'Thank you for choosing The Greenhouse. Your 50% reservation deposit has been validated and our kitchen team has been alerted for your dining time.'
+                    ? (isFullyPaid
+                        ? 'Thank you for dining with us. Your table order has been fully settled (100%) via VNPay.'
+                        : 'Thank you for choosing The Greenhouse. Your 50% reservation deposit has been validated and our kitchen team has been alerted for your dining time.')
                     : result?.message ||
                       'The payment was not completed by the gateway. If this was a mistake, you can initiate payment again from your reservation details.'}
                 </Typography>
@@ -303,52 +398,65 @@ export default function PaymentReturnPage() {
                     bgcolor: '#f5faf6',
                     border: '1px solid #dcebe1',
                     mb: 3.5,
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between',
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    gap: 2,
                   }}
                 >
-                  <Box>
-                    <Typography variant="caption" sx={{ color: '#55655b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Deposit Amount Paid
-                    </Typography>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 900,
-                        color: '#167a5a',
-                        letterSpacing: '-0.02em',
-                        mt: 0.25,
-                      }}
-                    >
-                      {formatVnd(result.amount)}{' '}
-                      <Typography component="span" variant="h6" sx={{ color: '#167a5a', fontWeight: 600 }}>
-                        VND
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#55655b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {isFullyPaid ? 'Total Amount Settled' : 'Deposit Amount Paid'}
                       </Typography>
-                    </Typography>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontWeight: 900,
+                          color: '#167a5a',
+                          letterSpacing: '-0.02em',
+                          mt: 0.25,
+                        }}
+                      >
+                        {formatVnd(result.amount)}{' '}
+                        <Typography component="span" variant="h6" sx={{ color: '#167a5a', fontWeight: 600 }}>
+                          VND
+                        </Typography>
+                      </Typography>
+                    </Box>
+
+                    <Chip
+                      label={
+                        isSuccess
+                          ? (isFullyPaid
+                            ? '100% FULLY SETTLED'
+                            : 'PAID (50% ADVANCE DEPOSIT)')
+                          : 'TRANSACTION UNPAID'
+                      }
+                      size="medium"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: 12,
+                        bgcolor: isSuccess ? '#167a5a' : '#fee2e2',
+                        color: isSuccess ? '#ffffff' : '#b91c1c',
+                        borderRadius: '10px',
+                        px: 1,
+                        height: 32,
+                      }}
+                    />
                   </Box>
 
-                  <Chip
-                    label={
-                      isSuccess
-                        ? (result.orderInfo && (result.orderInfo.toLowerCase().includes('final') || result.orderInfo.toLowerCase().includes('full') || result.orderInfo.toLowerCase().includes('tat toan'))
-                          ? '100% FULLY SETTLED'
-                          : 'PAID (50% ADVANCE DEPOSIT)')
-                        : 'TRANSACTION UNPAID'
-                    }
-                    size="medium"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: 12,
-                      bgcolor: isSuccess ? '#167a5a' : '#fee2e2',
-                      color: isSuccess ? '#ffffff' : '#b91c1c',
-                      borderRadius: '10px',
-                      px: 1,
-                      height: 32,
-                    }}
-                  />
+                  {!isFullyPaid && invoice?.orderRemainingAmount != null && Number(invoice.orderRemainingAmount) > 0 && (
+                    <Box sx={{ mt: 2, pt: 1.5, borderTop: '1px dashed #d0e2d7' }}>
+                      <Typography variant="caption" sx={{ color: '#4d6556', fontWeight: 600 }}>
+                        Total order value: <strong>{formatVnd(invoice.orderTotalAmount)} VND</strong> &bull; Remaining balance due upon dining: <strong style={{ color: '#167a5a' }}>{formatVnd(invoice.orderRemainingAmount)} VND</strong>
+                      </Typography>
+                    </Box>
+                  )}
                 </Paper>
 
                 {/* 4-Item Key Details Grid */}
@@ -437,13 +545,13 @@ export default function PaymentReturnPage() {
                 >
                   <InfoOutlinedIcon sx={{ color: '#167a5a', fontSize: 20, mt: 0.25, flexShrink: 0 }} />
                   <Typography variant="caption" sx={{ color: '#55655b', lineHeight: 1.6 }}>
-                    {result?.orderInfo && (result.orderInfo.toLowerCase().includes('final') || result.orderInfo.toLowerCase().includes('full') || result.orderInfo.toLowerCase().includes('tat toan')) ? (
+                    {isFullyPaid ? (
                       <>
-                        <strong>Full Settlement Policy:</strong> Your reservation and dining invoice have been fully paid (100%). No additional charges remain. We look forward to serving you again!
+                        <strong>Full Settlement Policy:</strong> Your dining invoice has been fully paid (100%). No additional charges remain. You can preview and download the official PDF invoice below. We look forward to serving you again!
                       </>
                     ) : (
                       <>
-                        <strong>Deposit Settlement Policy:</strong> Your 50% advance deposit reserves your seating and pre-ordered dishes. The remaining balance (and any additional orders placed while dining) will be calculated and settled upon dining completion.
+                        <strong>Deposit Policy (50% Advance):</strong> Your 50% deposit secures your reservation and kitchen station preparation. The remaining balance will be settled at the restaurant after dining.
                       </>
                     )}
                   </Typography>

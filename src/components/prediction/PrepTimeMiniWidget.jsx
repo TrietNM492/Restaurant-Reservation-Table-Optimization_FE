@@ -16,6 +16,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import LocalFireDepartmentRoundedIcon from '@mui/icons-material/LocalFireDepartmentRounded';
+import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded';
 import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import TimerRoundedIcon from '@mui/icons-material/TimerRounded';
@@ -59,30 +60,73 @@ export default function PrepTimeMiniWidget({
           isVip,
         };
 
-        if (orderId) {
-          payload.orderId = orderId;
-        } else {
+        if (items && items.length > 0) {
           payload.items = items.map((i) => ({
             menuItemId: Number(i.menuItemId || i.id),
             quantity: Number(i.quantity || 1),
           }));
+        }
+        if (orderId) {
+          payload.orderId = orderId;
         }
 
         const res = await predictionApi.predictPreparationTime(payload);
         if (!isCancelled) {
           setPrediction(res);
         }
-      } catch {
-        // Fallback default calculation if API temporary unavailable
+      } catch (err) {
+        console.warn('[PrepTimeMiniWidget] Prediction API call failed, using multi-slot LPT pool fallback:', err);
+        // Multi-slot LPT scheduling fallback across 3 parallel kitchen slots
         if (!isCancelled) {
+          const tasks = [];
+          let slowestName = items?.[0]?.itemName || 'Selected Dish';
+          let maxPrep = 0;
+
+          (items || []).forEach((it) => {
+            const prep = Number(it.estimatedPrepMinutes) || 15;
+            const qty = Number(it.quantity) || 1;
+            const name = it.itemName || 'Dish';
+            if (prep > maxPrep) {
+              maxPrep = prep;
+              slowestName = name;
+            }
+            for (let q = 0; q < qty; q++) {
+              tasks.push({ name, prep });
+            }
+          });
+
+          tasks.sort((a, b) => b.prep - a.prep);
+          const slots = [0, 0, 0];
+          let minFinish = Infinity;
+          let firstDishName = tasks[0]?.name || slowestName;
+
+          tasks.forEach((t) => {
+            let minIdx = 0;
+            for (let s = 1; s < slots.length; s++) {
+              if (slots[s] < slots[minIdx]) minIdx = s;
+            }
+            const finish = slots[minIdx] + t.prep;
+            slots[minIdx] = finish;
+            if (finish < minFinish) {
+              minFinish = finish;
+              firstDishName = t.name;
+            }
+          });
+
+          const estBase = Math.max(1, Math.max(...slots));
+          const firstReady = minFinish === Infinity ? estBase : Math.max(1, minFinish);
+
           setPrediction({
-            estimatedMinutes: 20,
-            estimatedReadyTime: new Date(Date.now() + 20 * 60000).toISOString(),
+            estimatedMinutes: estBase,
+            estimatedReadyTime: new Date(Date.now() + estBase * 60000).toISOString(),
             breakdown: {
-              baseCookingMinutes: 15,
-              queueWaitingMinutes: 3,
-              historicalBiasMinutes: 2,
-              longestDishName: items[0]?.itemName || 'Selected Dish',
+              baseCookingMinutes: estBase,
+              queueWaitingMinutes: 0,
+              historicalBiasMinutes: 0,
+              longestDishName: slowestName,
+              longestDishMinutes: maxPrep,
+              firstDishReadyMinutes: firstReady,
+              firstDishName: firstDishName,
             },
           });
         }
@@ -116,6 +160,8 @@ export default function PrepTimeMiniWidget({
   const estimatedMinutes = prediction?.estimatedMinutes || 15;
   const readyTime = formatReadyTime(prediction?.estimatedReadyTime);
   const longestDish = prediction?.breakdown?.longestDishName;
+  const firstDishReadyMinutes = prediction?.breakdown?.firstDishReadyMinutes;
+  const firstDishName = prediction?.breakdown?.firstDishName;
 
   return (
     <Box
@@ -202,6 +248,11 @@ export default function PrepTimeMiniWidget({
                   (Ready by {readyTime})
                 </Typography>
               </Typography>
+              {firstDishReadyMinutes && firstDishReadyMinutes < estimatedMinutes && !loading && (
+                <Typography variant="caption" sx={{ color: '#167a5a', fontWeight: 600, fontSize: 11, display: 'block', mt: 0.25 }}>
+                  First dish ready in ~{firstDishReadyMinutes}m ({firstDishName || 'Starter'})
+                </Typography>
+              )}
             </Box>
           </Stack>
 
@@ -218,6 +269,21 @@ export default function PrepTimeMiniWidget({
             </Typography>
 
             <Stack spacing={1}>
+              {/* Factor 0: First Dish Served */}
+              {firstDishReadyMinutes && firstDishReadyMinutes < estimatedMinutes && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f0fdf4', p: 0.75, borderRadius: '8px', border: '1px solid #bbf7d0', mb: 0.5 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <RestaurantMenuRoundedIcon sx={{ fontSize: 16, color: '#16a34a' }} />
+                    <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700 }}>
+                      First Dish Ready ({firstDishName || 'Quick item'})
+                    </Typography>
+                  </Stack>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#15803d' }}>
+                    ~{firstDishReadyMinutes}m
+                  </Typography>
+                </Box>
+              )}
+
               {/* Factor 1: Longest Dish */}
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Stack direction="row" spacing={1} alignItems="center">

@@ -33,6 +33,20 @@ export const paymentApi = {
   },
 
   /**
+   * Get invoice details for a payment
+   * @param {number} paymentId
+   * @returns {Promise<object>} InvoiceResponseDTO
+   */
+  getInvoice: async (paymentId) => {
+    if (!paymentId) throw new Error('Missing payment ID for invoice.');
+    const response = await api.get(`/payments/${paymentId}/invoice`).catch((error) => {
+      const message = error.response?.data?.message ?? 'Failed to fetch invoice details.';
+      throw new Error(typeof message === 'string' ? message : 'Failed to fetch invoice details.', { cause: error });
+    });
+    return unwrapData(response);
+  },
+
+  /**
    * Download official invoice PDF file
    * @param {number} paymentId
    */
