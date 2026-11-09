@@ -198,15 +198,13 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
     ) && (activeOrder.remainingAmount === undefined || Number(activeOrder.remainingAmount) <= 0)
   );
 
-  // Remaining unpaid balance on table
-  const unpaidAmount = useMemo(() => {
+  // Gross dishes subtotal of the active order (excluding room price if any)
+  const activeOrderDishesSubtotal = useMemo(() => {
     if (!activeOrder) return 0;
-    if (activeOrder.remainingAmount !== undefined && activeOrder.remainingAmount !== null) {
-      return Number(activeOrder.remainingAmount);
-    }
-    if (isOrderPaid) return 0;
-    return Number(activeOrder.totalAmount) || 0;
-  }, [activeOrder, isOrderPaid]);
+    const total = Number(activeOrder.totalAmount) || 0;
+    const room = Number(activeOrder.roomPrice) || (activeOrder.isVipRoom ? Number(selectedRoomPrice || 0) : 0);
+    return Math.max(0, total - room);
+  }, [activeOrder, selectedRoomPrice]);
 
   // Target total amount of order (after discount if any, or raw total)
   const orderTargetTotal = useMemo(() => {
@@ -214,14 +212,25 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
     if (activeOrder.targetTotalAmount !== undefined && activeOrder.targetTotalAmount !== null) {
       return Number(activeOrder.targetTotalAmount) || 0;
     }
-    return Number(activeOrder.totalAmount) || 0;
-  }, [activeOrder]);
+    const discount = Number(activeOrder.discountAmount) || 0;
+    return Math.max(0, activeOrderDishesSubtotal - discount);
+  }, [activeOrder, activeOrderDishesSubtotal]);
 
   // Already paid deposit / partial amount
   const alreadyPaidAmount = useMemo(() => {
     if (!activeOrder) return 0;
     return Number(activeOrder.alreadyPaidAmount) || 0;
   }, [activeOrder]);
+
+  // Remaining unpaid balance on table
+  const unpaidAmount = useMemo(() => {
+    if (!activeOrder) return 0;
+    if (activeOrder.remainingAmount !== undefined && activeOrder.remainingAmount !== null) {
+      return Math.max(0, Number(activeOrder.remainingAmount));
+    }
+    if (isOrderPaid) return 0;
+    return Math.max(0, orderTargetTotal - alreadyPaidAmount);
+  }, [activeOrder, isOrderPaid, orderTargetTotal, alreadyPaidAmount]);
 
   // 50% deposit calculations (eligible ONLY for advance reservations prior to guest arrival)
   const isEligibleForAdvanceDeposit = useMemo(() => {
@@ -1128,11 +1137,7 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
                   Dishes Subtotal:
                 </Typography>
                 <Typography variant="body2" fontWeight={600}>
-                  {formatMenuPrice(
-                    activeOrder
-                      ? Math.max(0, (Number(activeOrder.totalAmount) || 0) - (Number(activeOrder.roomPrice) || (activeOrder.isVipRoom ? Number(selectedRoomPrice || 0) : 0)) + draftSubtotal)
-                      : draftSubtotal
-                  )}
+                  {formatMenuPrice(activeOrder ? activeOrderDishesSubtotal : draftSubtotal)}
                 </Typography>
               </Box>
 
@@ -1147,13 +1152,40 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
                 </Box>
               )}
 
-              {activeOrder?.alreadyPaidAmount != null && Number(activeOrder.alreadyPaidAmount) > 0 && (
+              {activeOrder && (Number(activeOrder.discountRate) > 0 || alreadyPaidAmount > 0) && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" fontWeight={600} color="text.primary">
+                    Order Total:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="text.primary">
+                    {formatMenuPrice(orderTargetTotal)}
+                  </Typography>
+                </Box>
+              )}
+
+              {alreadyPaidAmount > 0 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" sx={{ color: '#16A34A' }}>
-                    Advance Deposit Paid:
+                    {alreadyPaidAmount >= orderTargetTotal ? 'Paid via VNPay:' : 'Advance Deposit Paid (50%):'}
                   </Typography>
                   <Typography variant="body2" fontWeight={600} sx={{ color: '#16A34A' }}>
-                    - {formatMenuPrice(activeOrder.alreadyPaidAmount)}
+                    - {formatMenuPrice(alreadyPaidAmount)}
+                  </Typography>
+                </Box>
+              )}
+
+              {activeOrder && items.length > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#7C3AED', fontWeight: 600 }}>
+                      New dishes (not yet sent):
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700} sx={{ color: '#7C3AED' }}>
+                      + {formatMenuPrice(draftSubtotal)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontSize: '0.72rem' }}>
+                    (Final amount is calculated after sending to kitchen)
                   </Typography>
                 </Box>
               )}
@@ -1161,12 +1193,16 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
               <Divider sx={{ my: 0.5 }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <Typography variant="subtitle1" fontWeight={700} sx={{ color: '#0F172A' }}>
-                  {unpaidAmount > 0 && (Number(activeOrder?.alreadyPaidAmount) > 0 || Number(activeOrder?.discountRate) > 0)
-                    ? 'Total Remaining Due:'
-                    : 'Total Amount:'}
+                  {activeOrder ? 'Remaining Due:' : 'Total Amount:'}
                 </Typography>
-                <Typography variant="h6" fontWeight={800} sx={{ color: '#7C3AED' }}>
-                  {formatMenuPrice(unpaidAmount > 0 ? unpaidAmount + draftSubtotal : grandTotal)}
+                <Typography
+                  variant="h6"
+                  fontWeight={800}
+                  sx={{
+                    color: activeOrder && unpaidAmount === 0 ? '#16A34A' : '#7C3AED',
+                  }}
+                >
+                  {formatMenuPrice(activeOrder ? unpaidAmount : grandTotal)}
                 </Typography>
               </Box>
             </Stack>
@@ -1174,7 +1210,7 @@ export default function DiningOrderDrawer({ onInitiatePayment }) {
             {/* Action Buttons */}
             {activeOrder ? (
               <Stack spacing={1}>
-                {isOrderPaid ? (
+                {isOrderPaid && alreadyPaidAmount > 0 ? (
                   <Stack spacing={1.5}>
                     <Card
                       variant="outlined"
