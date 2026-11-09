@@ -339,13 +339,13 @@ function ReservationPage() {
       if (isSelectedTableLocked) {
         setSubmitError(
           availableTables.length === 0
-            ? 'Bàn hiện tại đang bị khóa (LOCKED) và không có bàn khả dụng nào khác để thay thế.'
-            : 'Bàn hiện tại đang bị khóa (LOCKED). Vui lòng chọn một bàn khả dụng khác từ danh sách.'
+            ? 'The current table is locked (LOCKED) and no other available tables exist to replace it.'
+            : 'The current table is locked (LOCKED). Please select another available table from the list.'
         );
         return;
       }
       if (availableTables.length === 0) {
-        setSubmitError('Hiện tại không có bàn khả dụng nào để cập nhật đặt bàn.');
+        setSubmitError('No available tables found for updating this reservation.');
         return;
       }
     }

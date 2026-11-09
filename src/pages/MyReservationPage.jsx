@@ -352,6 +352,32 @@ function MyReservationPage() {
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {isPending ? (
+                          <Button
+                            variant="primary"
+                            size="small"
+                            onClick={() => {
+                              const tableId = res.tables?.[0]?.id;
+                              const isVip = res.reservationType === 'VIP'
+                                || res.reservationType === 'VIP_ROOM'
+                                || Boolean(res.rooms && res.rooms.length > 0);
+                              const queryParams = new URLSearchParams();
+                              queryParams.set('reservationId', res.id);
+                              if (res.reservationNo) queryParams.set('reservationNo', res.reservationNo);
+                              if (tableId) queryParams.set('tableId', tableId);
+                              if (isVip) {
+                                queryParams.set('isVip', 'true');
+                                if (res.rooms?.[0]?.id) queryParams.set('roomId', res.rooms[0].id);
+                                if (res.rooms?.[0]?.roomName) queryParams.set('roomName', res.rooms[0].roomName);
+                                if (res.rooms?.[0]?.price) queryParams.set('roomPrice', res.rooms[0].price);
+                              }
+                              navigate(`/menus?${queryParams.toString()}`);
+                            }}
+                          >
+                            Pre-order & Pay Deposit
+                          </Button>
+                        ) : null}
+
                         {isPending && !isVip ? (
                           <Button
                             variant="secondary"
