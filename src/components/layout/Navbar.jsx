@@ -38,22 +38,24 @@ function Navbar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const { isAuthenticated, user } = useAuthStore();
+  const isAdmin = user?.role === 'ROLE_ADMIN';
   const userName = user?.fullname || user?.name || user?.fullName || user?.username || user?.email || 'Account';
   const avatarSrc = typeof user?.avatar === 'string' ? user.avatar : undefined;
 
   const allNavItems = useMemo(() => {
-    if (isAuthenticated) {
-      if (navItems.some((item) => item.href === '/reservations/me')) {
-        return navItems;
-      }
+    if (!isAuthenticated) {
+      return navItems;
+    }
+
+    if (isAdmin) {
       return [
         ...navItems,
-        ...(user?.role === 'ROLE_ADMIN' ? [{ label: 'Manage menu', href: '/admin/menu-items' }] : []),
-        { label: 'My Reservations', href: '/reservations/me' },
+        { label: 'Manage dashboard', href: '/admin/dashboard' },
       ];
     }
-    return navItems;
-  }, [isAuthenticated, user?.role]);
+
+    return [...navItems, { label: 'My Reservations', href: '/reservations/me' }];
+  }, [isAuthenticated, isAdmin]);
 
   const handleNav = (path) => {
     if (path.startsWith('/#')) {
@@ -162,6 +164,7 @@ function Navbar() {
                   <Button
                     variant="ghost"
                     onClick={() => navigate('/profile')}
+                    disabled={isAdmin}
                     sx={{ minWidth: 0, px: 0.5, fontWeight: 600, maxWidth: 140 }}
                   >
                     {userName}
@@ -216,6 +219,7 @@ function Navbar() {
                   <Button
                     variant="ghost"
                     onClick={() => handleNav('/profile')}
+                    disabled={isAdmin}
                     sx={{ minWidth: 0, px: 0.5, fontWeight: 600 }}
                   >
                     {userName}
