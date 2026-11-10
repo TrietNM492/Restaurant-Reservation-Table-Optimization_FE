@@ -121,5 +121,55 @@ export const reservationApi = {
             throw customError;
         }
     },
+
+    adminList: async (params = {}) => {
+        try {
+            const { page = 0, size = 10, q = '', status = '', type = '', from = '', to = '' } = params;
+            const query = { page, size };
+            if (q && q.trim()) query.q = q.trim();
+            if (status) query.status = status;
+            if (type) query.type = type;
+            if (from) query.from = from;
+            if (to) query.to = to;
+            const response = await api.get('/reservations', { params: query });
+            return unwrapData(response);
+        } catch (error) {
+            const message = extractErrorMessage(error, 'Unable to load reservations.');
+            const customError = new Error(message, { cause: error });
+            customError.response = error?.response;
+            throw customError;
+        }
+    },
+
+    confirm: async (id) => {
+        try {
+            const response = await api.post(`/reservations/${id}/confirm`);
+            return unwrapData(response);
+        } catch (error) {
+            const message = extractErrorMessage(error, 'Unable to confirm reservation.');
+            const customError = new Error(message, { cause: error });
+            if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+                customError.fieldErrors = error.response.data.message;
+            }
+            customError.response = error?.response;
+            throw customError;
+        }
+    },
+
+    reject: async (id, reason) => {
+        try {
+            const payload = (typeof reason === 'string' && reason.trim()) ? { reason: reason.trim() } : {};
+            const response = await api.post(`/reservations/${id}/reject`, payload);
+            return unwrapData(response);
+        } catch (error) {
+            const message = extractErrorMessage(error, 'Unable to reject reservation.');
+            const customError = new Error(message, { cause: error });
+            if (error?.response?.data?.message && typeof error.response.data.message === 'object') {
+                customError.fieldErrors = error.response.data.message;
+            }
+            customError.response = error?.response;
+            throw customError;
+        }
+    },
 };
 

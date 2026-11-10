@@ -12,6 +12,7 @@ import RestaurantMenuRoundedIcon from '@mui/icons-material/RestaurantMenuRounded
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
+import BookOnlineRoundedIcon from '@mui/icons-material/BookOnlineRounded';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
@@ -41,6 +42,7 @@ const navigationGroups = [
   {
     label: 'Management',
     items: [
+      { label: 'Reservations', to: ROUTES.RESERVATIONS, icon: BookOnlineRoundedIcon },
       { label: 'Table Areas', to: ROUTES.TABLE_AREAS, icon: TableRestaurantRoundedIcon },
       { label: 'Tables', to: ROUTES.TABLES, icon: TableBarRoundedIcon },
       { label: 'Status Tracking', to: ROUTES.TABLE_TRACKING, icon: TableRestaurantRoundedIcon },

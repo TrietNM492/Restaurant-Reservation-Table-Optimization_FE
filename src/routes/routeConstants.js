@@ -11,6 +11,7 @@ export const ROUTES = {
     RESERVATION_EDIT: '/reservations/:id/edit',
     RESERVATION_VIP: '/reservations/vip',
     DASHBOARD: '/admin/dashboard',
+    RESERVATIONS: '/admin/reservations',
     TABLE_AREAS: '/admin/table-areas',
     TABLES: '/admin/tables',
     TABLE_TRACKING: '/admin/table-tracking',
