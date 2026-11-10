@@ -1,0 +1,192 @@
+.not-found-page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgb(232 244 238 / 78%) 0, rgb(247 248 246 / 0%) 42%),
+    #f7f8f6;
+}
+
+.not-found-page__container.MuiContainer-root {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-top: 25px;
+  padding-bottom: 20px;
+}
+
+.not-found-page__top,
+.not-found-page__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.not-found-page__brand.MuiLink-root {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #25382e;
+  font-family: Manrope, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+.not-found-page__brand > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: #176e4f;
+  color: #fff;
+}
+
+.not-found-page__top > .MuiTypography-root,
+.not-found-page__footer > .MuiTypography-root {
+  color: #929d95;
+  font-size: 10px;
+}
+
+.not-found-card {
+  display: flex;
+  width: min(100%, 580px);
+  align-self: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 16px 28px 25px;
+  text-align: center;
+}
+
+.not-found-card__art {
+  position: relative;
+  display: grid;
+  width: 220px;
+  height: 180px;
+  place-items: center;
+  margin-bottom: 17px;
+}
+
+.not-found-card__orbit {
+  position: absolute;
+  width: 158px;
+  height: 158px;
+  border: 1px solid #dbe9df;
+  border-radius: 50%;
+}
+
+.not-found-card__orbit--two { width: 194px; height: 194px; border-color: #e7efe8; }
+
+.not-found-card__plate {
+  position: relative;
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  border: 1px solid #d9e7dc;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 15px 35px rgb(33 74 50 / 9%), inset 0 0 0 9px #f8fbf8, inset 0 0 0 10px #e9f1eb;
+}
+
+.not-found-card__plate > span {
+  color: #267450;
+  font-family: Manrope, sans-serif;
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -2px;
+}
+
+.not-found-card__spark {
+  position: absolute;
+  color: #b6cdbb;
+  font-size: 20px;
+}
+
+.not-found-card__spark--one { top: 24px; right: 25px; color: #71a587; }
+.not-found-card__spark--two { bottom: 25px; left: 24px; font-size: 17px; }
+
+.not-found-card__eyebrow.MuiTypography-root {
+  margin-bottom: 9px;
+  color: #287653;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.not-found-card__title.MuiTypography-root {
+  color: #26372e;
+  font-family: Manrope, sans-serif;
+  font-size: clamp(27px, 5vw, 38px);
+  font-weight: 700;
+  letter-spacing: -1.6px;
+  line-height: 1.15;
+}
+
+.not-found-card__description.MuiTypography-root {
+  max-width: 410px;
+  margin-top: 12px;
+  color: #77847b;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.not-found-card__actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.not-found-card__actions .MuiButton-root {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.not-found-card__actions .MuiButton-outlined {
+  border-color: #dfe7e1;
+  color: #46564b;
+}
+
+.not-found-card__actions .MuiButton-contained {
+  background: #167a5a;
+  box-shadow: 0 4px 11px rgb(22 122 90 / 17%);
+}
+
+.not-found-card__actions .MuiButton-contained:hover { background: #105e45; }
+
+.not-found-card__support.MuiTypography-root {
+  margin-top: 23px;
+  color: #929d95;
+  font-size: 11px;
+}
+
+.not-found-card__support .MuiLink-root { color: #287653; font-weight: 600; }
+.not-found-page__footer { padding-top: 12px; border-top: 1px solid #e8ece8; }
+
+@media (max-width: 560px) {
+  .not-found-page__container.MuiContainer-root { padding: 18px 18px 16px; }
+  .not-found-page__top > .MuiTypography-root,
+  .not-found-page__footer > .MuiTypography-root:nth-child(2) { display: none; }
+  .not-found-card { padding: 10px 5px 18px; }
+  .not-found-card__art { width: 190px; height: 158px; margin-bottom: 15px; }
+  .not-found-card__orbit { width: 138px; height: 138px; }
+  .not-found-card__orbit--two { width: 168px; height: 168px; }
+  .not-found-card__plate { width: 104px; height: 104px; }
+  .not-found-card__plate > span { font-size: 27px; }
+  .not-found-card__actions { width: 100%; gap: 8px; }
+  .not-found-card__actions .MuiButton-root { flex: 1; min-width: 0; padding: 0 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .not-found-card *,
+  .not-found-page * { scroll-behavior: auto !important; }
+}
