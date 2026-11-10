@@ -17,6 +17,7 @@ const ReservationVipPage = lazy(() => import('../pages/ReservationVipPage'));
 const MyReservationPage = lazy(() => import('../pages/MyReservationPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const DashboardPage = lazy(() => import('../pages/AdminDashboardPage'));
+const AdminReservationPage = lazy(() => import('../pages/AdminReservationPage'));
 const VipRoomAnalyticsPage = lazy(() => import('../pages/VipRoomAnalyticsPage'));
 const KitchenPerformanceAnalyticsPage = lazy(() => import('../pages/KitchenPerformanceAnalyticsPage'));
 const TableAreaManagementPage = lazy(() => import('../pages/TableAreaManagementPage'));
@@ -114,6 +115,10 @@ export const routeConfig = [
             {
                 path: ROUTES.DASHBOARD,
                 element: createElement(DashboardPage),
+            },
+            {
+                path: ROUTES.RESERVATIONS,
+                element: createElement(AdminReservationPage),
             },
             {
                 path: ROUTES.TABLE_AREAS,
